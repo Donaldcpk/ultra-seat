@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>終極智能教室座位表生成器 - 完美版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            height: calc(100vh - 30px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            width: 320px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-right: 1px solid #e9ecef;
+            overflow-y: auto;
+        }
+
+        .center-panel {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #fafbfc;
+        }
+
+        .right-panel {
+            width: 300px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-left: 1px solid #e9ecef;
+            overflow-y: auto;
+        }
+
+        .section {
+            margin-bottom: 25px;
+            background: white;
+            padding: 18px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .section h3 {
+            color: #333;
+            margin-bottom: 12px;
+            font-size: 1.2em;
+            border-bottom: 2px solid #4facfe;
+            padding-bottom: 6px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: bold;
+            color: #555;
+            font-size: 13px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #e9ecef;
+            border-radius: 5px;
+            font-size: 13px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin: 3px;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffd93d 0%, #ff9500 100%);
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 11px;
+            width: auto;
+            display: inline-block;
+        }
+
+        .classroom-container {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            max-width: 100%;
+            max-height: 100%;
+            overflow: auto;
+        }
+
+        .blackboard {
+            background: #2d3436;
+            color: white;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .classroom-grid {
+            display: grid;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .seat {
+            width: 90px;
+            height: 70px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 13px;
+            text-align: center;
+            background: white;
+            position: relative;
+        }
+
+        .seat:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .seat.occupied {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: white;
+            border-color: #0984e3;
+        }
+
+        .seat.blocked {
+            background: linear-gradient(135deg, #636e72 0%, #2d3436 100%);
+            color: white;
+            cursor: not-allowed;
+            border-color: #636e72;
+        }
+
+        .seat.blocked:hover {
+            transform: none;
+        }
+
+        .seat.selected {
+            background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);
+            color: white;
+            border-color: #e84393;
+        }
+
+        .seat.highlight {
+            background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+            color: white;
+            border-color: #e17055;
+        }
+
+        .students-list {
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 8px;
+        }
+
+        .student-item {
+            padding: 6px;
+            margin: 3px 0;
+            background: #f8f9fa;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .student-item.assigned {
+            background: #d4edda;
+            border-left: 3px solid #28a745;
+        }
+
+        .statistics {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .stat-number {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #4facfe;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 3px;
+            font-size: 12px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-display {
+            display: block;
+            padding: 8px;
+            border: 2px dashed #4facfe;
+            border-radius: 5px;
+            text-align: center;
+            background: #f8f9ff;
+            transition: all 0.3s;
+            font-size: 12px;
+        }
+
+        .file-input-display:hover {
+            background: #e6f3ff;
+            border-color: #0984e3;
+        }
+
+        .alert {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .mode-selector {
+            display: flex;
+            margin-bottom: 15px;
+            background: #e9ecef;
+            border-radius: 20px;
+            padding: 3px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            background: transparent;
+            border-radius: 17px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .mode-btn.active {
+            background: #4facfe;
+            color: white;
+            box-shadow: 0 2px 8px rgba(79, 172, 254, 0.3);
+        }
+
+        .constraint-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px;
+            margin: 3px 0;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .constraint-item.active {
+            background: #d4edda;
+            border-left: 3px solid #28a745;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .left-panel, .right-panel {
+                width: 100%;
+                max-height: 200px;
+            }
+            
+            .center-panel {
+                flex: 1;
+                min-height: 400px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .seat {
+                width: 70px;
+                height: 55px;
+                font-size: 11px;
+            }
+            
+            .container {
+                height: auto;
+                min-height: calc(100vh - 30px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎓 終極智能教室座位表生成器</h1>
+            <p>完美版 - 精準限制控制，智能約束分配</p>
+        </div>
+
+        <div class="main-content">
+            <!-- 左側面板：教室設定 & 學生管理 -->
+            <div class="left-panel">
+                <!-- 教室設定 -->
+                <div class="section">
+                    <h3>📐 教室設定</h3>
+                    <div class="form-group">
+                        <label>班級名稱</label>
+                        <input type="text" id="className" placeholder="例：三年一班" value="三年一班">
+                    </div>
+                    <div class="form-group">
+                        <label>教室行數</label>
+                        <input type="number" id="rows" min="2" max="12" value="5">
+                    </div>
+                    <div class="form-group">
+                        <label>教室列數</label>
+                        <input type="number" id="cols" min="2" max="12" value="6">
+                    </div>
+                    <button class="btn" onclick="createClassroom()">建立教室</button>
+                </div>
+
+                <!-- 操作模式 -->
+                <div class="section">
+                    <h3>🎯 操作模式</h3>
+                    <div class="mode-selector">
+                        <button class="mode-btn active" onclick="setMode('assign')" id="assignMode">分配模式</button>
+                        <button class="mode-btn" onclick="setMode('block')" id="blockMode">阻擋模式</button>
+                    </div>
+                    <div id="modeHelp" class="alert alert-info">
+                        點擊座位進行分配或交換
+                    </div>
+                </div>
+
+                <!-- 學生管理 -->
+                <div class="section">
+                    <h3>👥 學生管理</h3>
+                    <div class="form-group">
+                        <label>匯入CSV檔案</label>
+                        <div class="file-input-wrapper">
+                            <input type="file" id="csvFile" accept=".csv" onchange="importCSV()">
+                            <label for="csvFile" class="file-input-display">
+                                📁 選擇CSV檔案<br>
+                                <small>格式：學號,姓名,職務</small>
+                            </label>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="createSampleData()">建立範例資料</button>
+                    <button class="btn btn-success" onclick="downloadSampleCSV()">下載範例CSV</button>
+                    
+                    <div class="students-list" id="studentsList">
+                        <div style="text-align: center; color: #999; padding: 15px; font-size: 12px;">
+                            尚未匯入學生資料
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中央面板：座位表 -->
+            <div class="center-panel">
+                <div class="classroom-container">
+                    <div class="blackboard" id="blackboard">
+                        🖤 黑板 - 三年一班
+                    </div>
+                    <div id="classroomGrid" class="classroom-grid">
+                        <div style="color: #999; padding: 40px; text-align: center;">
+                            請先建立教室布局
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側面板：操作控制 & 統計 -->
+            <div class="right-panel">
+                <!-- 座位操作 -->
+                <div class="section">
+                    <h3>🎯 座位操作</h3>
+                    <button class="btn" onclick="randomAssign()">🎲 隨機分配</button>
+                    <button class="btn btn-warning" onclick="smartAssign()">🧠 智能分配</button>
+                    <button class="btn btn-danger" onclick="resetSeats()">🔄 重置座位</button>
+                    <button class="btn btn-secondary" onclick="clearBlocked()">🚫 清除阻擋</button>
+                    <button class="btn btn-success" onclick="exportSeatingChart()">📄 匯出座位表</button>
+                </div>
+
+                <!-- 分配限制 -->
+                <div class="section">
+                    <h3>⚙️ 分配限制</h3>
+                    <div class="form-group">
+                        <label>選擇學生設定限制</label>
+                        <select id="constraintStudent" onchange="updateConstraintOptions()">
+                            <option value="">請選擇學生</option>
+                        </select>
+                    </div>
+                    <div id="constraintOptions" style="display: none;">
+                        <div class="form-group">
+                            <label>限制類型</label>
+                            <select id="constraintType">
+                                <option value="all">四周都不可相鄰</option>
+                                <option value="horizontal">左右不可相鄰</option>
+                                <option value="vertical">前後不可相鄰</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>不可相鄰的學生</label>
+                            <select id="targetStudent">
+                                <option value="">請選擇學生</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-warning btn-small" onclick="addConstraint()">新增限制</button>
+                    </div>
+                    
+                    <div id="constraintsList">
+                        <h4 style="font-size: 12px; margin: 10px 0 5px 0; color: #666;">已設定限制：</h4>
+                        <div id="constraintsDisplay" style="font-size: 11px; color: #999;">
+                            尚未設定任何限制
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-danger btn-small" onclick="clearConstraints()" style="margin-top: 10px;">清除所有限制</button>
+                </div>
+
+                <!-- 統計資訊 -->
+                <div class="section">
+                    <h3>📊 統計資訊</h3>
+                    <div class="statistics">
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalStudents">0</div>
+                            <div class="stat-label">總學生數</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="assignedStudents">0</div>
+                            <div class="stat-label">已分配</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="blockedSeats">0</div>
+                            <div class="stat-label">阻擋座位</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="assignmentRate">0%</div>
+                            <div class="stat-label">分配率</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="alertContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全域變數
+        let students = [];
+        let classroom = {
+            rows: 5,
+            cols: 6,
+            className: '三年一班',
+            seats: [],
+            blockedSeats: new Set()
+        };
+        let selectedSeat = null;
+        let currentMode = 'assign'; // 'assign' 或 'block'
+        let constraints = []; // 存儲限制條件
+
+        // 學生類別
+        class Student {
+            constructor(id, name, position = '') {
+                this.id = id;
+                this.name = name;
+                this.position = position;
+                this.row = null;
+                this.col = null;
+                this.gender = this.guessGender(name); // 簡單的性別推測
+            }
+
+            guessGender(name) {
+                // 簡單的性別推測邏輯（可以改進）
+                const femaleChars = ['美', '雅', '華', '芳', '玲', '慧', '琪', '鳳'];
+                return femaleChars.some(char => name.includes(char)) ? 'F' : 'M';
+            }
+
+            hasAssignedSeat() {
+                return this.row !== null && this.col !== null;
+            }
+
+            assignSeat(row, col) {
+                this.row = row;
+                this.col = col;
+            }
+
+            clearSeat() {
+                this.row = null;
+                this.col = null;
+            }
+
+            isOfficer() {
+                return this.position && this.position.trim() !== '';
+            }
+        }
+
+        // 設定操作模式
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(mode + 'Mode').classList.add('active');
+            
+            const helpText = mode === 'assign' ? '點擊座位進行分配或交換' : '點擊座位設定為不可坐';
+            document.getElementById('modeHelp').textContent = helpText;
+            
+            selectedSeat = null;
+            renderClassroom();
+        }
+
+        // 顯示提示訊息
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            alertContainer.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 3000);
+        }
+
+        // 建立教室
+        function createClassroom() {
+            const rows = parseInt(document.getElementById('rows').value);
+            const cols = parseInt(document.getElementById('cols').value);
+            const className = document.getElementById('className').value;
+
+            if (rows < 2 || rows > 12 || cols < 2 || cols > 12) {
+                showAlert('教室行數和列數必須在2-12之間', 'error');
+                return;
+            }
+
+            classroom.rows = rows;
+            classroom.cols = cols;
+            classroom.className = className;
+            classroom.seats = Array(rows).fill().map(() => Array(cols).fill(null));
+            classroom.blockedSeats = new Set();
+
+            updateBlackboard();
+            renderClassroom();
+            updateStatistics();
+            showAlert('教室建立成功！', 'success');
+        }
+
+        // 更新黑板顯示
+        function updateBlackboard() {
+            document.getElementById('blackboard').textContent = `🖤 黑板 - ${classroom.className}`;
+        }
+
+        // 渲染教室
+        function renderClassroom() {
+            const grid = document.getElementById('classroomGrid');
+            grid.innerHTML = '';
+            grid.style.gridTemplateColumns = `repeat(${classroom.cols}, 1fr)`;
+
+            for (let row = 0; row < classroom.rows; row++) {
+                for (let col = 0; col < classroom.cols; col++) {
+                    const seat = document.createElement('div');
+                    seat.className = 'seat';
+                    seat.dataset.row = row;
+                    seat.dataset.col = col;
+                    seat.onclick = () => onSeatClick(row, col);
+
+                    const seatKey = `${row}-${col}`;
+                    const student = classroom.seats[row][col];
+                    
+                    if (classroom.blockedSeats.has(seatKey)) {
+                        seat.classList.add('blocked');
+                        seat.innerHTML = `<div>🚫<br><small>不可坐</small></div>`;
+                    } else if (student) {
+                        seat.classList.add('occupied');
+                        seat.innerHTML = `<div>${student.name}<br><small>${student.position}</small></div>`;
+                    } else {
+                        seat.innerHTML = `<div>空位<br><small>(${row+1},${col+1})</small></div>`;
+                    }
+
+                    grid.appendChild(seat);
+                }
+            }
+        }
+
+        // 座位點擊事件
+        function onSeatClick(row, col) {
+            const seatKey = `${row}-${col}`;
+            
+            if (currentMode === 'block') {
+                // 阻擋模式
+                if (classroom.seats[row][col]) {
+                    showAlert('請先清空座位再設定阻擋', 'error');
+                    return;
+                }
+                
+                if (classroom.blockedSeats.has(seatKey)) {
+                    classroom.blockedSeats.delete(seatKey);
+                    showAlert('已取消阻擋座位', 'info');
+                } else {
+                    classroom.blockedSeats.add(seatKey);
+                    showAlert('已設定阻擋座位', 'info');
+                }
+                renderClassroom();
+                updateStatistics();
+            } else {
+                // 分配模式
+                if (classroom.blockedSeats.has(seatKey)) {
+                    showAlert('此座位已被阻擋', 'error');
+                    return;
+                }
+                
+                if (selectedSeat) {
+                    const [selectedRow, selectedCol] = selectedSeat;
+                    swapSeats(selectedRow, selectedCol, row, col);
+                    selectedSeat = null;
+                    renderClassroom();
+                } else {
+                    selectedSeat = [row, col];
+                    document.querySelectorAll('.seat').forEach(s => s.classList.remove('selected'));
+                    document.querySelector(`[data-row="${row}"][data-col="${col}"]`).classList.add('selected');
+                }
+            }
+        }
+
+        // 交換座位
+        function swapSeats(row1, col1, row2, col2) {
+            const student1 = classroom.seats[row1][col1];
+            const student2 = classroom.seats[row2][col2];
+
+            classroom.seats[row1][col1] = student2;
+            classroom.seats[row2][col2] = student1;
+
+            if (student1) {
+                student1.assignSeat(row2, col2);
+            }
+            if (student2) {
+                student2.assignSeat(row1, col1);
+            }
+
+            updateStatistics();
+            updateStudentsList();
+            showAlert('座位交換成功！', 'success');
+        }
+
+        // 建立範例資料
+        function createSampleData() {
+            students = [
+                new Student('S001', '王小明', '班長'),
+                new Student('S002', '李小華', '副班長'),
+                new Student('S003', '張小美', '學藝股長'),
+                new Student('S004', '陳小強', '體育股長'),
+                new Student('S005', '林小雅', '風紀股長'),
+                new Student('S006', '黃小龍', ''),
+                new Student('S007', '吳小鳳', ''),
+                new Student('S008', '劉小傑', ''),
+                new Student('S009', '蔡小慧', ''),
+                new Student('S010', '許小偉', ''),
+                new Student('S011', '鄭小芳', ''),
+                new Student('S012', '謝小宇', ''),
+                new Student('S013', '楊小琪', ''),
+                new Student('S014', '洪小峰', ''),
+                new Student('S015', '周小玲', ''),
+                new Student('S016', '趙小文', ''),
+                new Student('S017', '錢小君', ''),
+                new Student('S018', '孫小豪', '')
+            ];
+
+            updateStudentsList();
+            updateStatistics();
+            showAlert('範例資料建立成功！', 'success');
+        }
+
+        // 匯入CSV
+        function importCSV() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const csv = e.target.result;
+                parseCSV(csv);
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        // 解析CSV
+        function parseCSV(csv) {
+            const lines = csv.split('\n');
+            const newStudents = [];
+            const errors = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                const parts = line.split(',');
+                if (parts.length < 2) {
+                    errors.push(`第${i+1}行格式錯誤`);
+                    continue;
+                }
+
+                const id = parts[0].trim();
+                const name = parts[1].trim();
+                const position = parts[2] ? parts[2].trim() : '';
+
+                if (!id || !name) {
+                    errors.push(`第${i+1}行資料不完整`);
+                    continue;
+                }
+
+                if (newStudents.find(s => s.id === id)) {
+                    errors.push(`學號${id}重複`);
+                    continue;
+                }
+
+                newStudents.push(new Student(id, name, position));
+            }
+
+            if (errors.length > 0) {
+                showAlert(`匯入時發現錯誤：${errors.join(', ')}`, 'error');
+            }
+
+            if (newStudents.length > 0) {
+                students = newStudents;
+                updateStudentsList();
+                updateStatistics();
+                showAlert(`成功匯入${newStudents.length}位學生`, 'success');
+            }
+        }
+
+        // 下載範例CSV
+        function downloadSampleCSV() {
+            const csvContent = `學號,姓名,職務
+S001,王小明,班長
+S002,李小華,副班長
+S003,張小美,學藝股長
+S004,陳小強,體育股長
+S005,林小雅,風紀股長
+S006,黃小龍,
+S007,吳小鳳,
+S008,劉小傑,
+S009,蔡小慧,
+S010,許小偉,
+S011,鄭小芳,
+S012,謝小宇,
+S013,楊小琪,
+S014,洪小峰,
+S015,周小玲,
+S016,趙小文,
+S017,錢小君,
+S018,孫小豪,`;
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'sample_students.csv';
+            link.click();
+            
+            showAlert('範例CSV檔案已下載', 'success');
+        }
+
+        // 隨機分配座位
+        function randomAssign() {
+            if (students.length === 0) {
+                showAlert('請先匯入學生資料', 'error');
+                return;
+            }
+
+            const availableSeats = getAvailableSeats();
+            if (students.length > availableSeats.length) {
+                showAlert('學生人數超過可用座位數量', 'error');
+                return;
+            }
+
+            resetSeats();
+            shuffleArray(availableSeats);
+            shuffleArray(students);
+
+            for (let i = 0; i < students.length && i < availableSeats.length; i++) {
+                const [row, col] = availableSeats[i];
+                const student = students[i];
+                
+                classroom.seats[row][col] = student;
+                student.assignSeat(row, col);
+            }
+
+            renderClassroom();
+            updateStudentsList();
+            updateStatistics();
+            showAlert('隨機分配完成！', 'success');
+        }
+
+        // 智能分配座位
+        function smartAssign() {
+            if (students.length === 0) {
+                showAlert('請先匯入學生資料', 'error');
+                return;
+            }
+
+            const availableSeats = getAvailableSeats();
+            if (students.length > availableSeats.length) {
+                showAlert('學生人數超過可用座位數量', 'error');
+                return;
+            }
+
+            resetSeats();
+
+            // 使用約束滿足算法進行分配
+            const assignment = solveConstraintSatisfaction(students, availableSeats, constraints);
+            
+            if (assignment) {
+                // 應用分配結果
+                assignment.forEach(([student, seat]) => {
+                    const [row, col] = seat;
+                    classroom.seats[row][col] = student;
+                    student.assignSeat(row, col);
+                });
+                
+                renderClassroom();
+                updateStudentsList();
+                updateStatistics();
+                showAlert('智能分配完成！', 'success');
+            } else {
+                showAlert('無法滿足所有限制條件，請調整限制或使用隨機分配', 'error');
+            }
+        }
+
+        // 約束滿足算法
+        function solveConstraintSatisfaction(students, availableSeats, constraints) {
+            const maxAttempts = 1000;
+            
+            for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                const shuffledStudents = [...students];
+                const shuffledSeats = [...availableSeats];
+                shuffleArray(shuffledStudents);
+                shuffleArray(shuffledSeats);
+                
+                const assignment = [];
+                const usedSeats = new Set();
+                
+                let success = true;
+                
+                for (const student of shuffledStudents) {
+                    let assigned = false;
+                    
+                    for (const seat of shuffledSeats) {
+                        const seatKey = `${seat[0]}-${seat[1]}`;
+                        if (usedSeats.has(seatKey)) continue;
+                        
+                        // 檢查是否違反限制
+                        if (violatesConstraints(student, seat, assignment, constraints)) {
+                            continue;
+                        }
+                        
+                        assignment.push([student, seat]);
+                        usedSeats.add(seatKey);
+                        assigned = true;
+                        break;
+                    }
+                    
+                    if (!assigned) {
+                        success = false;
+                        break;
+                    }
+                }
+                
+                if (success) {
+                    return assignment;
+                }
+            }
+            
+            return null; // 無法找到滿足所有限制的分配
+        }
+
+        // 檢查是否違反限制
+        function violatesConstraints(student, seat, currentAssignment, constraints) {
+            const [row, col] = seat;
+            
+            for (const constraint of constraints) {
+                if (constraint.student1 !== student.id && constraint.student2 !== student.id) {
+                    continue; // 此限制與當前學生無關
+                }
+                
+                const otherStudentId = constraint.student1 === student.id ? constraint.student2 : constraint.student1;
+                
+                // 找到另一個學生的位置
+                const otherAssignment = currentAssignment.find(([s, _]) => s.id === otherStudentId);
+                if (!otherAssignment) continue; // 另一個學生還未分配
+                
+                const [otherRow, otherCol] = otherAssignment[1];
+                
+                // 檢查是否相鄰
+                const isAdjacent = checkAdjacency(row, col, otherRow, otherCol, constraint.type);
+                if (isAdjacent) {
+                    return true; // 違反限制
+                }
+            }
+            
+            return false;
+        }
+
+        // 檢查相鄰關係
+        function checkAdjacency(row1, col1, row2, col2, constraintType) {
+            const rowDiff = Math.abs(row1 - row2);
+            const colDiff = Math.abs(col1 - col2);
+            
+            switch (constraintType) {
+                case 'all':
+                    // 四周都不可相鄰（包括對角線）
+                    return rowDiff <= 1 && colDiff <= 1 && !(rowDiff === 0 && colDiff === 0);
+                case 'horizontal':
+                    // 左右不可相鄰
+                    return rowDiff === 0 && colDiff === 1;
+                case 'vertical':
+                    // 前後不可相鄰
+                    return rowDiff === 1 && colDiff === 0;
+                default:
+                    return false;
+            }
+        }
+
+        // 獲取可用座位
+        function getAvailableSeats() {
+            const available = [];
+            for (let row = 0; row < classroom.rows; row++) {
+                for (let col = 0; col < classroom.cols; col++) {
+                    const seatKey = `${row}-${col}`;
+                    if (!classroom.blockedSeats.has(seatKey)) {
+                        available.push([row, col]);
+                    }
+                }
+            }
+            return available;
+        }
+
+        // 重置座位
+        function resetSeats() {
+            classroom.seats = Array(classroom.rows).fill().map(() => Array(classroom.cols).fill(null));
+            students.forEach(student => student.clearSeat());
+            
+            selectedSeat = null;
+            renderClassroom();
+            updateStudentsList();
+            updateStatistics();
+            showAlert('座位已重置', 'info');
+        }
+
+        // 清除阻擋座位
+        function clearBlocked() {
+            classroom.blockedSeats.clear();
+            renderClassroom();
+            updateStatistics();
+            showAlert('已清除所有阻擋座位', 'info');
+        }
+
+        // 更新學生清單
+        function updateStudentsList() {
+            const list = document.getElementById('studentsList');
+            
+            if (students.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: #999; padding: 15px; font-size: 12px;">尚未匯入學生資料</div>';
+                updateStudentSelectors();
+                return;
+            }
+
+            list.innerHTML = '';
+            students.forEach(student => {
+                const item = document.createElement('div');
+                item.className = 'student-item';
+                if (student.hasAssignedSeat()) {
+                    item.classList.add('assigned');
+                }
+
+                const seatInfo = student.hasAssignedSeat() 
+                    ? `(${student.row + 1}, ${student.col + 1})` 
+                    : '未分配';
+
+                item.innerHTML = `
+                    <div>
+                        <strong>${student.name}</strong><br>
+                        <small>${student.id} ${student.position}</small>
+                    </div>
+                    <div style="text-align: right;">
+                        <small>${seatInfo}</small>
+                    </div>
+                `;
+
+                list.appendChild(item);
+            });
+            
+            updateStudentSelectors();
+        }
+
+        // 更新學生選擇器
+        function updateStudentSelectors() {
+            const constraintStudent = document.getElementById('constraintStudent');
+            const targetStudent = document.getElementById('targetStudent');
+            
+            // 清空選項
+            constraintStudent.innerHTML = '<option value="">請選擇學生</option>';
+            targetStudent.innerHTML = '<option value="">請選擇學生</option>';
+            
+            // 添加學生選項
+            students.forEach(student => {
+                const option1 = document.createElement('option');
+                option1.value = student.id;
+                option1.textContent = `${student.name} (${student.id})`;
+                constraintStudent.appendChild(option1);
+                
+                const option2 = document.createElement('option');
+                option2.value = student.id;
+                option2.textContent = `${student.name} (${student.id})`;
+                targetStudent.appendChild(option2);
+            });
+        }
+
+        // 更新限制選項顯示
+        function updateConstraintOptions() {
+            const constraintStudent = document.getElementById('constraintStudent');
+            const constraintOptions = document.getElementById('constraintOptions');
+            
+            if (constraintStudent.value) {
+                constraintOptions.style.display = 'block';
+            } else {
+                constraintOptions.style.display = 'none';
+            }
+        }
+
+        // 新增限制
+        function addConstraint() {
+            const constraintStudentId = document.getElementById('constraintStudent').value;
+            const targetStudentId = document.getElementById('targetStudent').value;
+            const constraintType = document.getElementById('constraintType').value;
+            
+            if (!constraintStudentId || !targetStudentId) {
+                showAlert('請選擇兩個學生', 'error');
+                return;
+            }
+            
+            if (constraintStudentId === targetStudentId) {
+                showAlert('不能選擇同一個學生', 'error');
+                return;
+            }
+            
+            // 檢查是否已存在相同限制
+            const existingConstraint = constraints.find(c => 
+                (c.student1 === constraintStudentId && c.student2 === targetStudentId) ||
+                (c.student1 === targetStudentId && c.student2 === constraintStudentId)
+            );
+            
+            if (existingConstraint) {
+                showAlert('此限制已存在', 'error');
+                return;
+            }
+            
+            const student1 = students.find(s => s.id === constraintStudentId);
+            const student2 = students.find(s => s.id === targetStudentId);
+            
+            const constraint = {
+                student1: constraintStudentId,
+                student2: targetStudentId,
+                type: constraintType,
+                name1: student1.name,
+                name2: student2.name
+            };
+            
+            constraints.push(constraint);
+            updateConstraintsDisplay();
+            showAlert('限制新增成功', 'success');
+            
+            // 重置選擇
+            document.getElementById('constraintStudent').value = '';
+            document.getElementById('targetStudent').value = '';
+            updateConstraintOptions();
+        }
+
+        // 更新限制顯示
+        function updateConstraintsDisplay() {
+            const display = document.getElementById('constraintsDisplay');
+            
+            if (constraints.length === 0) {
+                display.innerHTML = '<div style="color: #999;">尚未設定任何限制</div>';
+                return;
+            }
+            
+            let html = '';
+            constraints.forEach((constraint, index) => {
+                const typeText = {
+                    'all': '四周不可相鄰',
+                    'horizontal': '左右不可相鄰',
+                    'vertical': '前後不可相鄰'
+                }[constraint.type];
+                
+                html += `
+                    <div class="constraint-item" style="display: flex; justify-content: space-between; align-items: center; padding: 5px; margin: 2px 0; background: #f0f8ff; border-radius: 3px; font-size: 11px;">
+                        <span>${constraint.name1} ↔ ${constraint.name2} (${typeText})</span>
+                        <button onclick="removeConstraint(${index})" style="background: #ff6b6b; color: white; border: none; border-radius: 3px; padding: 2px 6px; font-size: 10px; cursor: pointer;">刪除</button>
+                    </div>
+                `;
+            });
+            
+            display.innerHTML = html;
+        }
+
+        // 移除限制
+        function removeConstraint(index) {
+            constraints.splice(index, 1);
+            updateConstraintsDisplay();
+            showAlert('限制已移除', 'info');
+        }
+
+        // 清除所有限制
+        function clearConstraints() {
+            constraints = [];
+            updateConstraintsDisplay();
+            showAlert('已清除所有限制', 'info');
+        }
+
+        // 更新統計資訊
+        function updateStatistics() {
+            const total = students.length;
+            const assigned = students.filter(s => s.hasAssignedSeat()).length;
+            const blocked = classroom.blockedSeats.size;
+            const rate = total > 0 ? Math.round((assigned / total) * 100) : 0;
+
+            document.getElementById('totalStudents').textContent = total;
+            document.getElementById('assignedStudents').textContent = assigned;
+            document.getElementById('blockedSeats').textContent = blocked;
+            document.getElementById('assignmentRate').textContent = rate + '%';
+        }
+
+        // 匯出座位表
+        function exportSeatingChart() {
+            if (students.length === 0) {
+                showAlert('請先匯入學生資料', 'error');
+                return;
+            }
+
+            let csvContent = '座位行,座位列,學號,姓名,職務\n';
+            
+            for (let row = 0; row < classroom.rows; row++) {
+                for (let col = 0; col < classroom.cols; col++) {
+                    const student = classroom.seats[row][col];
+                    if (student) {
+                        csvContent += `${row + 1},${col + 1},${student.id},${student.name},${student.position}\n`;
+                    }
+                }
+            }
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${classroom.className}_座位表.csv`;
+            link.click();
+
+            showAlert('座位表已匯出', 'success');
+        }
+
+        // 工具函數：陣列隨機排序
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            createClassroom();
+            updateStatistics();
+            updateConstraintsDisplay();
+            showAlert('歡迎使用完美版！支援精準限制控制和智能約束分配', 'success');
+        });
+    </script>
+</body>
+</html> 

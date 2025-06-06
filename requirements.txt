@@ -1,0 +1,28 @@
+# 終極智能教室座位表生成器 - 依賴套件
+
+# 資料處理
+pandas>=1.5.0
+openpyxl>=3.0.0          # Excel 檔案讀寫支援
+
+# GUI 介面 (Tkinter 為 Python 內建，無需安裝)
+# tkinter - 內建套件
+
+# 輸出功能
+reportlab>=3.6.0         # PDF 生成
+matplotlib>=3.5.0        # 圖表與 PNG 輸出
+Pillow>=9.0.0           # 圖像處理支援
+
+# 資料驗證與處理
+jsonschema>=4.0.0       # JSON 資料驗證
+
+# 開發與測試工具
+pytest>=7.0.0           # 單元測試框架
+pytest-cov>=4.0.0       # 測試覆蓋率
+
+# 程式碼品質
+flake8>=5.0.0           # 程式碼風格檢查
+black>=22.0.0           # 程式碼格式化
+
+# 其他工具
+python-dateutil>=2.8.0  # 日期處理
+numpy>=1.21.0           # 數值計算支援 
