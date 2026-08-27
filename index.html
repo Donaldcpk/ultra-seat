@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultra Seat 學校版｜終極智能教室座位表</title>
+    <title>終極課室座位表｜港校班主任排位與課室管理</title>
     <style>
         :root {
             --primary: #2563eb;
@@ -520,40 +520,21 @@
 <body>
     <div class="container">
         <div class="header no-print">
-            <h1>Ultra Seat 學校版</h1>
-            <p>終極智能教室座位表｜課堂分配 · 考試梅花座 · A4 列印 · 本機模板</p>
+            <h1>終極課室座位表</h1>
+            <p>港校班主任的排位＋課室管理：不可同坐、擋壞桌、前排／SEN、A4 門海報、本機模板</p>
         </div>
 
         <div class="main-content">
             <div class="left-panel no-print">
                 <div class="section">
-                    <h3>用途模式</h3>
-                    <div class="app-mode-selector">
-                        <button type="button" class="mode-btn active" id="classAppMode" onclick="setAppMode('class')">課堂</button>
-                        <button type="button" class="mode-btn" id="examAppMode" onclick="setAppMode('exam')">考試</button>
-                    </div>
-                    <div id="examOptions" style="display:none;">
-                        <label class="checkbox-row">
-                            <input type="checkbox" id="checkerboardOpt" checked>
-                            <span>梅花座（正交相鄰不可同時有人；阻擋格不算佔用）</span>
-                        </label>
-                        <label class="checkbox-row">
-                            <input type="checkbox" id="disperseGroupOpt" checked>
-                            <span>同班別／組別分散（需 CSV 有班別或組別欄）</span>
-                        </label>
-                    </div>
-                    <p class="hint" id="modeHint">課堂模式：配對限制 + 智能分配，適合日常座位表。</p>
-                </div>
-
-                <div class="section">
-                    <h3>教室設定</h3>
+                    <h3>課室設定</h3>
                     <div class="form-group">
                         <label>學校名稱（列印用）</label>
                         <input type="text" id="schoolName" placeholder="例：某某中學" value="">
                     </div>
                     <div class="form-group">
-                        <label>班級／場地名稱</label>
-                        <input type="text" id="className" placeholder="例：中三甲 / 禮堂考試" value="中三甲">
+                        <label>班別名稱</label>
+                        <input type="text" id="className" placeholder="例：中三甲" value="中三甲">
                     </div>
                     <div class="form-group">
                         <label>日期（列印用）</label>
@@ -561,20 +542,20 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>行數（最多 25）</label>
-                            <input type="number" id="rows" min="2" max="25" value="6">
+                            <label>行數（最多 12）</label>
+                            <input type="number" id="rows" min="2" max="12" value="6">
                         </div>
                         <div class="form-group">
-                            <label>列數（最多 20）</label>
-                            <input type="number" id="cols" min="2" max="20" value="7">
+                            <label>列數（最多 12）</label>
+                            <input type="number" id="cols" min="2" max="12" value="7">
                         </div>
                     </div>
-                    <button type="button" class="btn" onclick="createClassroom()">建立／套用教室</button>
-                    <p class="hint">考試禮堂建議約 20×15；畫面會自動縮小格子。</p>
+                    <button type="button" class="btn" onclick="createClassroom()">建立／套用課室</button>
+                    <p class="hint">一般中學課室約 5–7 行 × 6–8 列即可；格數較大時畫面會自動縮小。</p>
                 </div>
 
                 <div class="section">
-                    <h3>教室模板（本機）</h3>
+                    <h3>課室模板（本機）</h3>
                     <div class="form-group">
                         <label>模板名稱</label>
                         <input type="text" id="templateName" placeholder="例：室 301 六行七列">
@@ -587,7 +568,7 @@
                         <button type="button" class="btn btn-secondary btn-small" onclick="loadSelectedTemplate()">載入</button>
                         <button type="button" class="btn btn-danger btn-small" onclick="deleteSelectedTemplate()">刪</button>
                     </div>
-                    <p class="hint">只存名稱、行列、阻擋座位；學生名單不會上傳或上傳伺服器，僅存瀏覽器 localStorage。</p>
+                    <p class="hint">只存名稱、行列、阻擋座位；學生名單只留在本機瀏覽器，不上傳。</p>
                 </div>
 
                 <div class="section">
@@ -607,17 +588,29 @@
                             <input type="file" id="csvFile" accept=".csv,text/csv" onchange="importCSV()">
                             <label for="csvFile" class="file-input-display">
                                 選擇 CSV 檔案<br>
-                                <small>班別,學號/班號,姓名[,職務][,前排/SEN]</small>
+                                <small>班別,班號/學號,姓名[,職務][,前排/SEN]</small>
                             </label>
                         </div>
                     </div>
-                    <button type="button" class="btn btn-secondary" onclick="createSampleData()">建立範例（課堂）</button>
-                    <button type="button" class="btn btn-secondary" onclick="createExamSampleData()">建立範例（兩班考試）</button>
+                    <button type="button" class="btn btn-secondary" onclick="createSampleData()">建立班內範例（40 人）</button>
                     <button type="button" class="btn btn-success" onclick="downloadSampleCSV()">下載範例 CSV</button>
                     <div class="students-list" id="studentsList">
                         <div style="text-align:center;color:#999;padding:12px;font-size:12px;">尚未匯入學生資料</div>
                     </div>
                 </div>
+
+                <details class="section" id="advancedOptions">
+                    <summary style="cursor:pointer;font-weight:700;color:#475569;font-size:13px;">進階選項（少用）</summary>
+                    <p class="hint" style="margin-top:8px;">以下非班主任日常流程；考務／特殊編排才勾選。</p>
+                    <label class="checkbox-row">
+                        <input type="checkbox" id="checkerboardOpt">
+                        <span>梅花座（上下左右不可同時有人；阻擋格不算有人）</span>
+                    </label>
+                    <label class="checkbox-row">
+                        <input type="checkbox" id="disperseGroupOpt">
+                        <span>同班別／組別正交分散（CSV 需有班別或組別）</span>
+                    </label>
+                </details>
             </div>
 
             <div class="center-panel">
@@ -644,8 +637,8 @@
                 </div>
 
                 <div class="section">
-                    <h3>配對限制</h3>
-                    <p class="hint">兩位學生不可相鄰（課堂／考試皆適用）。</p>
+                    <h3>不可同坐（配對限制）</h3>
+                    <p class="hint">指定兩位學生不可相鄰——這是相對「只編修座位圖」的主要差別。</p>
                     <div class="form-group">
                         <label>選擇學生</label>
                         <select id="constraintStudent" onchange="updateConstraintOptions()">
@@ -704,8 +697,8 @@
     </div>
 
     <script>
-        const MAX_ROWS = 25;
-        const MAX_COLS = 20;
+        const MAX_ROWS = 12;
+        const MAX_COLS = 12;
         const TEMPLATE_KEY = 'ultraSeat_templates_v1';
         const SOLVER_NODE_LIMIT = 250000;
         const SOLVER_TIME_MS = 8000;
@@ -721,7 +714,6 @@
         };
         let selectedSeat = null;
         let currentMode = 'assign';
-        let appMode = 'class'; // 'class' | 'exam'
         let constraints = [];
 
         class Student {
@@ -754,17 +746,6 @@
             }
         }
 
-        function setAppMode(mode) {
-            appMode = mode;
-            document.getElementById('classAppMode').classList.toggle('active', mode === 'class');
-            document.getElementById('examAppMode').classList.toggle('active', mode === 'exam');
-            document.getElementById('examOptions').style.display = mode === 'exam' ? 'block' : 'none';
-            document.getElementById('modeHint').textContent = mode === 'exam'
-                ? '考試模式：可啟用梅花座與同班分散；仍可加上配對限制。'
-                : '課堂模式：配對限制 + 智能分配，適合日常座位表。';
-            updateBlackboard();
-        }
-
         function setMode(mode) {
             currentMode = mode;
             document.querySelectorAll('.mode-selector .mode-btn').forEach(btn => btn.classList.remove('active'));
@@ -791,7 +772,7 @@
             const schoolName = document.getElementById('schoolName').value.trim();
 
             if (Number.isNaN(rows) || Number.isNaN(cols) || rows < 2 || rows > MAX_ROWS || cols < 2 || cols > MAX_COLS) {
-                showAlert(`教室行數須為 2–${MAX_ROWS}，列數須為 2–${MAX_COLS}`, 'error');
+                showAlert(`課室行數與列數須為 2–${MAX_ROWS}`, 'error');
                 return;
             }
 
@@ -814,17 +795,16 @@
             renderClassroom();
             updateStatistics();
             updateStudentsList();
-            showAlert(`教室已套用：${rows}×${cols}`, 'success');
+            showAlert(`課室已套用：${rows}×${cols}`, 'success');
         }
 
         function updateBlackboard() {
-            const modeLabel = appMode === 'exam' ? '考試' : '課堂';
             const school = document.getElementById('schoolName').value.trim();
             classroom.schoolName = school;
             classroom.className = document.getElementById('className').value.trim() || classroom.className;
             const prefix = school ? `${school} · ` : '';
             document.getElementById('blackboard').textContent =
-                `黑板 — ${prefix}${classroom.className}（${modeLabel}）`;
+                `黑板 — ${prefix}${classroom.className}`;
         }
 
         function seatSizeVars() {
@@ -1068,29 +1048,7 @@
             updateConstraintsDisplay();
             updateStudentsList();
             updateStatistics();
-            showAlert('已建立 40 人課堂範例', 'success');
-        }
-
-        function createExamSampleData() {
-            students = [];
-            for (let i = 1; i <= 20; i++) {
-                const n = String(i).padStart(2, '0');
-                students.push(new Student(`A${n}`, `甲班生${n}`, '', '中三甲', i === 3));
-            }
-            for (let i = 1; i <= 20; i++) {
-                const n = String(i).padStart(2, '0');
-                students.push(new Student(`B${n}`, `乙班生${n}`, '', '中三乙', false));
-            }
-            setAppMode('exam');
-            document.getElementById('className').value = '禮堂考試';
-            document.getElementById('rows').value = 10;
-            document.getElementById('cols').value = 10;
-            createClassroom();
-            constraints = [];
-            updateConstraintsDisplay();
-            updateStudentsList();
-            updateStatistics();
-            showAlert('已建立兩班共 40 人考試範例（10×10）', 'success');
+            showAlert('已建立 40 人班內範例', 'success');
         }
 
         function importCSV() {
@@ -1233,21 +1191,21 @@
         }
 
         function downloadSampleCSV() {
-            const csvContent = `\uFEFF班別,學號,姓名,職務,前排
+            const csvContent = `\uFEFF班別,班號,姓名,職務,前排
 中三甲,01,陳志明,班長,
 中三甲,02,李美玲,副班長,
 中三甲,03,王俊傑,學藝,
 中三甲,04,黃嘉欣,,是
 中三甲,05,張偉強,,
-中三乙,01,乙班甲,,
-中三乙,02,乙班乙,,
-中三乙,03,乙班丙,,`;
+中三甲,06,林詠詩,,
+中三甲,07,吳家豪,,
+中三甲,08,鄭雅婷,,`;
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = 'ultra_seat_sample_hk.csv';
+            link.download = '班內座位_範例.csv';
             link.click();
-            showAlert('範例 CSV 已下載（含班別與前排欄）', 'success');
+            showAlert('範例 CSV 已下載', 'success');
         }
 
         /* ---------- Seats / assign ---------- */
@@ -1308,8 +1266,8 @@
         }
 
         function getSolverOptions() {
-            const checkerboard = appMode === 'exam' && document.getElementById('checkerboardOpt').checked;
-            const disperseGroup = appMode === 'exam' && document.getElementById('disperseGroupOpt').checked;
+            const checkerboard = document.getElementById('checkerboardOpt').checked;
+            const disperseGroup = document.getElementById('disperseGroupOpt').checked;
             return { checkerboard, disperseGroup };
         }
 
@@ -1328,7 +1286,7 @@
             if (opts.checkerboard) {
                 const capacity = maxCheckerboardCapacity(availableSeats);
                 if (students.length > capacity) {
-                    showAlert(`梅花座下約最多可坐 ${capacity} 人（正交不相鄰），目前 ${students.length} 人，請加大場地或關閉梅花座`, 'error');
+                    showAlert(`梅花座下約最多可坐 ${capacity} 人，目前 ${students.length} 人；請關閉梅花座或減少人數`, 'error');
                     return;
                 }
             }
@@ -1337,7 +1295,7 @@
             if (opts.checkerboard) {
                 const colored = pickCheckerboardColorSeats(availableSeats, students.length);
                 if (!colored) {
-                    showAlert('梅花座可用色格不足，請加大場地、減少阻擋或關閉梅花座', 'error');
+                    showAlert('梅花座可用座位不足，請關閉進階選項或調整布局', 'error');
                     return;
                 }
                 seatPool = colored;
@@ -1540,9 +1498,9 @@
 
             let message = '找不到滿足所有條件的座位安排。';
             if (timedOut || nodes >= SOLVER_NODE_LIMIT) {
-                message += ` 搜尋已達上限（約 ${nodes} 節點／${SOLVER_TIME_MS / 1000} 秒），限制可能過密或無解——請減少配對限制、關閉部分考試選項，或加大場地。`;
+                message += ` 搜尋已達上限（約 ${nodes} 節點／${SOLVER_TIME_MS / 1000} 秒）。請減少「不可同坐」組數、關閉進階選項，或調整布局後再試。`;
             } else {
-                message += ' 條件組合可能無解，請調整梅花座／同班分散／配對限制後再試。';
+                message += ' 條件組合可能無解，請減少配對限制或關閉進階選項後再試。';
             }
             return { ok: false, message, nodes };
         }
@@ -1684,13 +1642,12 @@
             const school = document.getElementById('schoolName').value.trim();
             const dateVal = document.getElementById('chartDate').value;
             const dateText = dateVal || new Date().toISOString().slice(0, 10);
-            const modeLabel = appMode === 'exam' ? '考試座位表' : '課堂座位表';
             const opts = getSolverOptions();
 
             let legend = ['白格＝空位', '灰格＝阻擋／結構', '姓名＝已分配'];
-            if (opts.checkerboard) legend.push('梅花座：正交不相鄰');
+            if (opts.checkerboard) legend.push('已啟用梅花座');
             if (opts.disperseGroup) legend.push('同班別已盡量分散');
-            if (constraints.length) legend.push(`配對限制 ${constraints.length} 組`);
+            if (constraints.length) legend.push(`不可同坐 ${constraints.length} 組`);
 
             const cellMin = Math.max(18, Math.min(36, Math.floor(240 / Math.max(classroom.rows, 1))));
 
@@ -1717,17 +1674,17 @@
 
             document.getElementById('printPoster').innerHTML = `
                 <div class="print-title">${title}</div>
-                <div class="print-meta">${modeLabel}　｜　日期：${escapeHtml(dateText)}　｜　${classroom.rows} 行 × ${classroom.cols} 列</div>
+                <div class="print-meta">課室座位表　｜　日期：${escapeHtml(dateText)}　｜　${classroom.rows} 行 × ${classroom.cols} 列</div>
                 <div class="print-board">黑板（此方向為前方）</div>
                 ${gridHtml}
                 <div class="print-legend">${legend.map(l => `<span>• ${escapeHtml(l)}</span>`).join('')}</div>
-                <div class="print-footer">Ultra Seat 學校版 · 資料僅存於此裝置瀏覽器 · 請核對後張貼</div>
+                <div class="print-footer">終極課室座位表 · 資料僅存於此裝置瀏覽器 · 請核對後張貼於課室門</div>
             `;
         }
 
         function printSeatingChart() {
             if (!classroom.seats.length) {
-                showAlert('請先建立教室', 'error');
+                showAlert('請先建立課室', 'error');
                 return;
             }
             buildPrintPoster();
@@ -1749,7 +1706,7 @@
             createClassroom();
             updateStatistics();
             updateConstraintsDisplay();
-            showAlert('歡迎使用 Ultra Seat 學校版：可列印 A4、考試梅花座、本機教室模板', 'success');
+            showAlert('歡迎使用：匯入名單 → 擋壞桌 → 設不可同坐 → 智能分配 → 列印 A4 課室門海報', 'success');
         });
     </script>
 </body>

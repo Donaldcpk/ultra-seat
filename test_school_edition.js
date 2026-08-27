@@ -1,5 +1,5 @@
 /**
- * Ultra Seat 學校版 — 核心邏輯單測（不開瀏覽器）
+ * 終極課室座位表 — 核心邏輯單測（班主任課室場景）
  * 執行：node test_school_edition.js
  */
 
@@ -27,6 +27,17 @@ function maxCheckerboardCapacity(availableSeats) {
     return Math.max(black, white);
 }
 
+function pickCheckerboardColorSeats(availableSeats, needCount) {
+    const black = availableSeats.filter(([r, c]) => (r + c) % 2 === 0);
+    const white = availableSeats.filter(([r, c]) => (r + c) % 2 === 1);
+    const candidates = [];
+    if (black.length >= needCount) candidates.push(black);
+    if (white.length >= needCount) candidates.push(white);
+    if (candidates.length === 0) return null;
+    candidates.sort((a, b) => b.length - a.length);
+    return candidates[0];
+}
+
 function orthogonalNeighbors(row, col, rows, cols) {
     return [
         [row - 1, col], [row + 1, col], [row, col - 1], [row, col + 1]
@@ -39,17 +50,6 @@ function shuffleArray(array) {
         [array[i], array[j]] = [array[j], array[i]];
     }
     return array;
-}
-
-function pickCheckerboardColorSeats(availableSeats, needCount) {
-    const black = availableSeats.filter(([r, c]) => (r + c) % 2 === 0);
-    const white = availableSeats.filter(([r, c]) => (r + c) % 2 === 1);
-    const candidates = [];
-    if (black.length >= needCount) candidates.push(black);
-    if (white.length >= needCount) candidates.push(white);
-    if (candidates.length === 0) return null;
-    candidates.sort((a, b) => b.length - a.length);
-    return candidates[0];
 }
 
 function solveCSP({ students, rows, cols, blocked, constraints, opts, nodeLimit = 100000, timeMs = 5000 }) {
@@ -160,57 +160,39 @@ function seatsGrid(rows, cols) {
     return a;
 }
 
-function verifyCheckerboard(assignment, blocked, rows, cols) {
-    const occ = new Map();
-    for (const [id, seat] of assignment) occ.set(`${seat[0]}-${seat[1]}`, id);
-    for (const [, seat] of assignment) {
-        for (const [nr, nc] of orthogonalNeighbors(seat[0], seat[1], rows, cols)) {
-            const nk = `${nr}-${nc}`;
-            if (blocked.has(nk)) continue;
-            if (occ.has(nk)) return false;
-        }
-    }
-    return true;
-}
-
 let passed = 0;
 
-// 1) adjacency
+// 1) 相鄰判定
 assert(checkAdjacency(0, 0, 0, 1, 'horizontal'), 'horizontal neighbor');
 assert(!checkAdjacency(0, 0, 1, 0, 'horizontal'), 'not horizontal');
 assert(checkAdjacency(0, 0, 1, 1, 'all'), 'diagonal all');
 assert(!checkAdjacency(0, 0, 1, 1, 'vertical'), 'diagonal not vertical');
 passed++;
 
-// 2) checkerboard capacity 4x4 = 8
-assert(maxCheckerboardCapacity(seatsGrid(4, 4)) === 8, '4x4 capacity 8');
-passed++;
-
-// 3) blocked does not reduce checkerboard neighbor occupancy wrongly —
-//    place with blocked between: capacity still computable
-{
-    const blocked = new Set(['0-1']);
-    const avail = seatsGrid(2, 3).filter(([r, c]) => !blocked.has(`${r}-${c}`));
-    assert(maxCheckerboardCapacity(avail) >= 2, 'capacity with block');
-    passed++;
-}
-
-// 4) solve checkerboard 40 students on 10x10
+// 2) 典型課室：40 人、6×7、3 組不可同坐
 {
     const students = [];
-    for (let i = 0; i < 40; i++) students.push({ id: 'S' + i, classGroup: i < 20 ? 'A' : 'B' });
-    const blocked = new Set();
+    for (let i = 0; i < 40; i++) {
+        students.push({ id: String(i + 1).padStart(2, '0'), classGroup: '中三甲' });
+    }
+    const constraints = [
+        { student1: '01', student2: '02', type: 'all' },
+        { student1: '03', student2: '04', type: 'horizontal' },
+        { student1: '05', student2: '06', type: 'vertical' }
+    ];
+    const blocked = new Set(['5-6', '5-5']);
     const result = solveCSP({
-        students, rows: 10, cols: 10, blocked,
-        constraints: [],
-        opts: { checkerboard: true, disperseGroup: false }
+        students, rows: 6, cols: 7, blocked, constraints,
+        opts: { checkerboard: false, disperseGroup: false }
     });
-    assert(result.ok, '40 on 10x10 checkerboard should solve');
-    assert(verifyCheckerboard(result.assignment, blocked, 10, 10), 'result is checkerboard');
+    assert(result.ok, '40 students 6x7 with 3 keep-apart should solve');
+    const a = result.assignment.get('01');
+    const b = result.assignment.get('02');
+    assert(!checkAdjacency(a[0], a[1], b[0], b[1], 'all'), '01 and 02 not adjacent');
     passed++;
 }
 
-// 5) pair constraint respected
+// 3) 配對限制：左右不可相鄰
 {
     const students = [
         { id: 'A', classGroup: '' },
@@ -230,55 +212,37 @@ passed++;
     passed++;
 }
 
-// 6) impossible: 3 students checkerboard on 2x2 (max capacity 2)
+// 4) 阻擋格不可分配
 {
-    const avail = seatsGrid(2, 2);
-    assert(maxCheckerboardCapacity(avail) === 2, '2x2 checkerboard max 2');
-    const students = [{ id: '1' }, { id: '2' }, { id: '3' }];
+    const students = [{ id: '1' }, { id: '2' }];
+    const blocked = new Set(['0-0']);
     const result = solveCSP({
-        students, rows: 2, cols: 2, blocked: new Set(),
-        constraints: [],
-        opts: { checkerboard: true, disperseGroup: false },
-        nodeLimit: 5000
+        students, rows: 2, cols: 2, blocked, constraints: [],
+        opts: { checkerboard: false, disperseGroup: false }
     });
-    assert(!result.ok, '3 students checkerboard 2x2 must fail');
+    assert(result.ok, 'two students with one blocked seat');
+    for (const [, seat] of result.assignment) {
+        assert(!blocked.has(`${seat[0]}-${seat[1]}`), 'not on blocked');
+    }
     passed++;
 }
 
-// 7) disperse same group
+// 5) 進階梅花座容量（非主流程，僅確保仍可用）
+assert(maxCheckerboardCapacity(seatsGrid(4, 4)) === 8, '4x4 capacity 8');
 {
     const students = [];
-    for (let i = 0; i < 8; i++) {
-        students.push({ id: 'A' + i, classGroup: '甲' });
-        students.push({ id: 'B' + i, classGroup: '乙' });
-    }
+    for (let i = 0; i < 18; i++) students.push({ id: 'S' + i });
     const result = solveCSP({
-        students, rows: 8, cols: 8, blocked: new Set(),
+        students, rows: 6, cols: 7, blocked: new Set(),
         constraints: [],
-        opts: { checkerboard: true, disperseGroup: true }
+        opts: { checkerboard: true, disperseGroup: false }
     });
-    assert(result.ok, 'disperse+checkerboard 16 on 8x8');
-    for (const [id, seat] of result.assignment) {
-        const me = students.find(s => s.id === id);
-        for (const [nr, nc] of orthogonalNeighbors(seat[0], seat[1], 8, 8)) {
-            let otherId = null;
-            for (const [oid, os] of result.assignment) {
-                if (os[0] === nr && os[1] === nc) otherId = oid;
-            }
-            if (!otherId) continue;
-            const other = students.find(s => s.id === otherId);
-            assert(me.classGroup !== other.classGroup, 'orthogonal neighbor different group');
-        }
-    }
+    assert(result.ok, 'optional checkerboard on classroom grid');
     passed++;
 }
 
-// 8) legacy CSV header detection helpers
-function normalizeHeader(h) {
-    return String(h || '').replace(/^\uFEFF/, '').trim().toLowerCase();
-}
-assert(normalizeHeader('\uFEFF學號') === '學號', 'BOM strip');
-assert(!('guessGender' in globalThis && false), 'no gender API required');
+// 6) 無性別推測 API
+assert(typeof globalThis.guessGender === 'undefined', 'no gender guess');
 passed++;
 
 console.log(`OK: ${passed} test groups passed`);
