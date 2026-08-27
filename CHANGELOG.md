@@ -4,6 +4,17 @@
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-08-27
+
+### Added
+- 週更／輪換：再次智能分配時優先換離上次座位（記憶於本機，依班別）；成功後顯示換位人數
+- 分析 CSV：狀態、是否前排、左鄰、右鄰；含空位／阻擋列以便對應課室
+- 分配檢查報告：每組不可同坐 → 已遵守／失敗；前排／SEN 未進前兩排會列出
+- 班內範例自動加入 3 組不可同坐，方便示範
+
+### Changed
+- 智能分配按鈕標示「含週更」；隨機分配後若有限制亦顯示檢查報告
+
 ## [2.2.0] - 2026-08-27
 
 ### Added
@@ -41,7 +52,8 @@
 ### Added
 - 初版 CSV、隨機分配、Python GUI
 
-[Unreleased]: https://github.com/Donaldcpk/ultra-seat/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/Donaldcpk/ultra-seat/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/Donaldcpk/ultra-seat/compare/v1.0.0...v2.0.0

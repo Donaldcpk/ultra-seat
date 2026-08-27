@@ -629,11 +629,19 @@
                 <div class="section">
                     <h3>座位操作</h3>
                     <button type="button" class="btn" onclick="randomAssign()">隨機分配</button>
-                    <button type="button" class="btn btn-warning" onclick="smartAssign()">智能分配</button>
+                    <button type="button" class="btn btn-warning" onclick="smartAssign()">智能分配（含週更）</button>
                     <button type="button" class="btn btn-accent" onclick="printSeatingChart()">列印 A4 座位表</button>
                     <button type="button" class="btn btn-danger" onclick="resetSeats()">重置座位</button>
                     <button type="button" class="btn btn-secondary" onclick="clearBlocked()">清除阻擋</button>
-                    <button type="button" class="btn btn-success" onclick="exportSeatingChart()">匯出 CSV</button>
+                    <button type="button" class="btn btn-success" onclick="exportSeatingChart()">匯出分析 CSV</button>
+                    <p class="hint">再次智能分配會盡量換位（記得上次方案）；匯出 CSV 含左鄰／右鄰供 Excel 分析，海報請用列印。</p>
+                </div>
+
+                <div class="section">
+                    <h3>分配檢查報告</h3>
+                    <div id="constraintReport" style="font-size:12px;color:#64748b;">
+                        尚未分配。智能分配後會顯示「不可同坐」是否遵守，以及前排／SEN 是否坐在前兩排。
+                    </div>
                 </div>
 
                 <div class="section">
@@ -700,6 +708,7 @@
         const MAX_ROWS = 12;
         const MAX_COLS = 12;
         const TEMPLATE_KEY = 'ultraSeat_templates_v1';
+        const LAST_PLAN_KEY = 'ultraSeat_lastPlan_v1';
         const SOLVER_NODE_LIMIT = 250000;
         const SOLVER_TIME_MS = 8000;
 
@@ -715,6 +724,8 @@
         let selectedSeat = null;
         let currentMode = 'assign';
         let constraints = [];
+        /** @type {Record<string, [number, number]>|null} */
+        let lastPlanMemory = null;
 
         class Student {
             constructor(id, name, position = '', classGroup = '', needsFront = false) {
@@ -912,6 +923,10 @@
             updateStatistics();
             updateStudentsList();
             showAlert('座位交換成功', 'success');
+            if (constraints.length || students.some(s => s.needsFront)) {
+                renderConstraintReport('已手動換位，請再核對限制。');
+            }
+            saveLastPlan(captureCurrentPlan());
         }
 
         /* ---------- Templates (localStorage) ---------- */
@@ -1044,11 +1059,17 @@
                 new Student('39', '區俊傑', '', '中三甲', false),
                 new Student('40', '巫詠詩', '', '中三甲', false)
             ];
-            constraints = [];
+            constraints = [
+                { student1: '05', student2: '07', type: 'all', name1: '張偉強', name2: '吳家豪' },
+                { student1: '11', student2: '13', type: 'horizontal', name1: '朱浩然', name2: '馬子軒' },
+                { student1: '22', student2: '24', type: 'vertical', name1: '盧家輝', name2: '高子傑' }
+            ];
+            clearStoredPlanForClass(document.getElementById('className').value.trim() || '中三甲');
             updateConstraintsDisplay();
             updateStudentsList();
             updateStatistics();
-            showAlert('已建立 40 人班內範例', 'success');
+            clearConstraintReport();
+            showAlert('已建立 40 人班內範例，並加入 3 組不可同坐（示範用）', 'success');
         }
 
         function importCSV() {
@@ -1181,9 +1202,11 @@
             if (newStudents.length > 0) {
                 students = newStudents;
                 constraints = [];
+                clearStoredPlanForClass(classroom.className);
                 updateConstraintsDisplay();
                 updateStudentsList();
                 updateStatistics();
+                clearConstraintReport();
                 showAlert(`成功匯入 ${newStudents.length} 位學生`, 'success');
             } else {
                 showAlert('沒有匯入任何學生', 'error');
@@ -1262,13 +1285,84 @@
             renderClassroom();
             updateStudentsList();
             updateStatistics();
+            saveLastPlan(captureCurrentPlan());
             showAlert('隨機分配完成（未套用限制）', 'success');
+            renderConstraintReport(constraints.length ? '隨機分配不保證遵守不可同坐，請看下方檢查。' : '');
         }
 
         function getSolverOptions() {
             const checkerboard = document.getElementById('checkerboardOpt').checked;
             const disperseGroup = document.getElementById('disperseGroupOpt').checked;
             return { checkerboard, disperseGroup };
+        }
+
+        function planStorageKey(className) {
+            return `${LAST_PLAN_KEY}:${className || '未命名'}`;
+        }
+
+        function clearStoredPlanForClass(className) {
+            lastPlanMemory = null;
+            try { localStorage.removeItem(planStorageKey(className)); } catch (e) { /* ignore */ }
+        }
+
+        function captureCurrentPlan() {
+            const plan = {};
+            students.forEach(s => {
+                if (s.hasAssignedSeat()) plan[s.id] = [s.row, s.col];
+            });
+            return plan;
+        }
+
+        function saveLastPlan(plan) {
+            lastPlanMemory = plan && Object.keys(plan).length ? plan : null;
+            try {
+                if (!lastPlanMemory) {
+                    localStorage.removeItem(planStorageKey(classroom.className));
+                    return;
+                }
+                localStorage.setItem(planStorageKey(classroom.className), JSON.stringify({
+                    plan: lastPlanMemory,
+                    rows: classroom.rows,
+                    cols: classroom.cols,
+                    savedAt: new Date().toISOString()
+                }));
+            } catch (e) { /* ignore quota */ }
+        }
+
+        function loadPreviousSeatsMap() {
+            let plan = lastPlanMemory;
+            if (!plan || !Object.keys(plan).length) {
+                try {
+                    const raw = localStorage.getItem(planStorageKey(classroom.className));
+                    if (raw) {
+                        const data = JSON.parse(raw);
+                        plan = data.plan || null;
+                        lastPlanMemory = plan;
+                    }
+                } catch (e) {
+                    plan = null;
+                }
+            }
+            if (!plan) return null;
+            const map = new Map();
+            Object.keys(plan).forEach(id => {
+                const seat = plan[id];
+                if (Array.isArray(seat) && seat.length === 2) map.set(id, [seat[0], seat[1]]);
+            });
+            return map.size ? map : null;
+        }
+
+        function countMovedStudents(assignmentPairs, previousMap) {
+            if (!previousMap || previousMap.size === 0) return { moved: 0, comparable: 0 };
+            let moved = 0;
+            let comparable = 0;
+            assignmentPairs.forEach(([student, seat]) => {
+                if (!previousMap.has(student.id)) return;
+                comparable++;
+                const prev = previousMap.get(student.id);
+                if (prev[0] !== seat[0] || prev[1] !== seat[1]) moved++;
+            });
+            return { moved, comparable };
         }
 
         function smartAssign() {
@@ -1301,12 +1395,14 @@
                 seatPool = colored;
             }
 
+            const previousMap = loadPreviousSeatsMap();
             resetSeats(true);
-            showAlert('正在以回溯法搜尋可行解…', 'info');
+            showAlert(previousMap
+                ? '正在搜尋可行解，並盡量讓學生換離上次座位…'
+                : '正在以回溯法搜尋可行解…', 'info');
 
-            // Yield so alert can paint
             setTimeout(() => {
-                const result = solveCSP(students, seatPool, constraints, opts);
+                const result = solveCSP(students, seatPool, constraints, opts, previousMap);
                 if (result.ok) {
                     result.assignment.forEach(([student, seat]) => {
                         const [row, col] = seat;
@@ -1316,19 +1412,26 @@
                     renderClassroom();
                     updateStudentsList();
                     updateStatistics();
+                    saveLastPlan(captureCurrentPlan());
+
                     const bits = [];
                     if (opts.checkerboard) bits.push('梅花座');
                     if (opts.disperseGroup) bits.push('同班分散');
-                    if (constraints.length) bits.push(`${constraints.length} 組配對限制`);
-                    showAlert(`智能分配完成（探索 ${result.nodes} 節點${bits.length ? '；' + bits.join('、') : ''}）`, 'success');
+                    if (constraints.length) bits.push(`${constraints.length} 組不可同坐`);
+                    let moveMsg = '';
+                    if (previousMap && result.comparable > 0) {
+                        moveMsg = `；相對上次有 ${result.moved}/${result.comparable} 人換了座位`;
+                    }
+                    showAlert(`智能分配完成（探索 ${result.nodes} 節點${bits.length ? '；' + bits.join('、') : ''}${moveMsg}）`, 'success');
+                    renderConstraintReport(moveMsg ? `週更：${result.moved}/${result.comparable} 人已換位。` : '');
                 } else {
                     showAlert(result.message, 'error');
+                    clearConstraintReport();
                 }
             }, 30);
         }
 
         function maxCheckerboardCapacity(availableSeats) {
-            // Upper bound: checkerboard coloring; take max of two colors among available
             let black = 0, white = 0;
             for (const [r, c] of availableSeats) {
                 if ((r + c) % 2 === 0) black++;
@@ -1337,7 +1440,6 @@
             return Math.max(black, white);
         }
 
-        /** Restrict to one checkerboard color so orthogonal neighbors stay empty (blocked ignored). */
         function pickCheckerboardColorSeats(availableSeats, needCount) {
             const black = availableSeats.filter(([r, c]) => (r + c) % 2 === 0);
             const white = availableSeats.filter(([r, c]) => (r + c) % 2 === 1);
@@ -1375,35 +1477,40 @@
         }
 
         /**
-         * Real backtracking CSP with MRV + seat shuffle.
-         * Does NOT claim completeness under time/node limits — returns clear failure.
+         * 回溯 + MRV。若有 previousMap，優先換離舊位，並在多次重啟中選換位最多者。
+         * 不宣稱在節點／時間上限下必找到最佳或完備解。
          */
-        function solveCSP(studentList, availableSeats, constraintList, opts) {
+        function solveCSP(studentList, availableSeats, constraintList, opts, previousMap) {
             const seats = availableSeats.map(s => [...s]);
-            const assignment = new Map(); // student.id -> [r,c]
-            const occupied = new Map(); // seatKey -> student
+            const assignment = new Map();
+            const occupied = new Map();
             const start = performance.now();
             let nodes = 0;
             let timedOut = false;
             const frontRowLimit = Math.min(2, classroom.rows);
+            const hasPrevious = previousMap && previousMap.size > 0;
 
-            function isValid(student, seat) {
+            function isValid(student, seat, forbidPrevious) {
                 const [row, col] = seat;
                 const key = seatKey(seat);
                 if (occupied.has(key)) return false;
 
+                if (forbidPrevious && hasPrevious && previousMap.has(student.id)) {
+                    const prev = previousMap.get(student.id);
+                    if (prev[0] === row && prev[1] === col) return false;
+                }
+
                 if (opts.checkerboard) {
                     for (const [nr, nc] of orthogonalNeighbors(row, col)) {
                         const nk = `${nr}-${nc}`;
-                        if (classroom.blockedSeats.has(nk)) continue; // blocked ≠ occupied
+                        if (classroom.blockedSeats.has(nk)) continue;
                         if (occupied.has(nk)) return false;
                     }
                 }
 
                 if (opts.disperseGroup && student.classGroup) {
                     for (const [nr, nc] of orthogonalNeighbors(row, col)) {
-                        const nk = `${nr}-${nc}`;
-                        const other = occupied.get(nk);
+                        const other = occupied.get(`${nr}-${nc}`);
                         if (other && other.classGroup && other.classGroup === student.classGroup) {
                             return false;
                         }
@@ -1422,21 +1529,28 @@
                 return true;
             }
 
-            function domainFor(student) {
-                let domain = seats.filter(s => isValid(student, s));
+            function domainFor(student, forbidPrevious) {
+                let domain = seats.filter(s => isValid(student, s, forbidPrevious));
                 if (student.needsFront) {
                     const front = domain.filter(([r]) => r < frontRowLimit);
                     const back = domain.filter(([r]) => r >= frontRowLimit);
                     domain = front.length ? front.concat(back) : domain;
                 }
+                if (hasPrevious && previousMap.has(student.id)) {
+                    const prev = previousMap.get(student.id);
+                    const pk = `${prev[0]}-${prev[1]}`;
+                    const moved = domain.filter(s => seatKey(s) !== pk);
+                    const same = domain.filter(s => seatKey(s) === pk);
+                    domain = moved.concat(same);
+                }
                 return domain;
             }
 
-            function selectNextStudent(remaining) {
+            function selectNextStudent(remaining, forbidPrevious) {
                 let best = null;
                 let bestCount = Infinity;
                 for (const s of remaining) {
-                    const d = domainFor(s);
+                    const d = domainFor(s, forbidPrevious);
                     if (d.length < bestCount) {
                         bestCount = d.length;
                         best = { student: s, domain: d };
@@ -1446,7 +1560,7 @@
                 return best;
             }
 
-            function bt(remaining) {
+            function bt(remaining, forbidPrevious) {
                 nodes++;
                 if (nodes > SOLVER_NODE_LIMIT || (performance.now() - start) > SOLVER_TIME_MS) {
                     timedOut = true;
@@ -1454,7 +1568,7 @@
                 }
                 if (remaining.length === 0) return true;
 
-                const pick = selectNextStudent(remaining);
+                const pick = selectNextStudent(remaining, forbidPrevious);
                 if (!pick || pick.domain.length === 0) return false;
 
                 const { student, domain } = pick;
@@ -1465,7 +1579,7 @@
                     assignment.set(student.id, seat);
                     occupied.set(key, student);
 
-                    if (bt(nextRemaining)) return true;
+                    if (bt(nextRemaining, forbidPrevious)) return true;
 
                     assignment.delete(student.id);
                     occupied.delete(key);
@@ -1474,27 +1588,43 @@
                 return false;
             }
 
-            const maxRestarts = 6;
-            for (let restart = 0; restart < maxRestarts; restart++) {
-                timedOut = false;
-                assignment.clear();
-                occupied.clear();
-                shuffleArray(seats);
-                const frontOnes = studentList.filter(s => s.needsFront);
-                const rest = studentList.filter(s => !s.needsFront);
-                shuffleArray(frontOnes);
-                shuffleArray(rest);
-                const remaining = frontOnes.concat(rest);
+            function runSearch(forbidPrevious, restarts) {
+                let best = null;
+                let bestMoved = -1;
+                for (let restart = 0; restart < restarts; restart++) {
+                    if (timedOut || nodes > SOLVER_NODE_LIMIT) break;
+                    assignment.clear();
+                    occupied.clear();
+                    shuffleArray(seats);
+                    const frontOnes = studentList.filter(s => s.needsFront);
+                    const rest = studentList.filter(s => !s.needsFront);
+                    shuffleArray(frontOnes);
+                    shuffleArray(rest);
+                    const remaining = frontOnes.concat(rest);
 
-                if (bt(remaining)) {
-                    const pairs = [];
-                    for (const s of studentList) {
-                        pairs.push([s, assignment.get(s.id)]);
+                    if (bt(remaining, forbidPrevious)) {
+                        const pairs = studentList.map(s => [s, assignment.get(s.id)]);
+                        const { moved, comparable } = countMovedStudents(pairs, previousMap);
+                        if (moved > bestMoved) {
+                            bestMoved = moved;
+                            best = { ok: true, assignment: pairs, nodes, moved, comparable };
+                            if (comparable > 0 && moved === comparable) break;
+                        }
                     }
-                    return { ok: true, assignment: pairs, nodes };
                 }
-                if (nodes > SOLVER_NODE_LIMIT) break;
+                return best;
             }
+
+            // 先試硬性禁止坐回舊位；失敗再軟性偏好並取換位最多者
+            let result = null;
+            if (hasPrevious) {
+                result = runSearch(true, 4);
+            }
+            if (!result) {
+                result = runSearch(false, hasPrevious ? 6 : 6);
+            }
+
+            if (result) return result;
 
             let message = '找不到滿足所有條件的座位安排。';
             if (timedOut || nodes >= SOLVER_NODE_LIMIT) {
@@ -1602,6 +1732,67 @@
             showAlert('已清除所有限制', 'info');
         }
 
+        function clearConstraintReport() {
+            const el = document.getElementById('constraintReport');
+            if (el) {
+                el.innerHTML = '尚未分配。智能分配後會顯示「不可同坐」是否遵守，以及前排／SEN 是否坐在前兩排。';
+                el.style.color = '#64748b';
+            }
+        }
+
+        function buildConstraintReportData() {
+            const typeText = { all: '四周', horizontal: '左右', vertical: '前後' };
+            const frontLimit = Math.min(2, classroom.rows);
+            const pairs = constraints.map(c => {
+                const s1 = students.find(s => s.id === c.student1);
+                const s2 = students.find(s => s.id === c.student2);
+                let status = '未分配';
+                if (s1 && s2 && s1.hasAssignedSeat() && s2.hasAssignedSeat()) {
+                    const violated = checkAdjacency(s1.row, s1.col, s2.row, s2.col, c.type);
+                    status = violated ? '失敗' : '已遵守';
+                }
+                return {
+                    label: `${c.name1} ↔ ${c.name2}（${typeText[c.type] || c.type}）`,
+                    status
+                };
+            });
+            const frontIssues = students
+                .filter(s => s.needsFront && s.hasAssignedSeat() && s.row >= frontLimit)
+                .map(s => `${s.name}（現於第 ${s.row + 1} 行）`);
+            const frontOk = students.filter(s => s.needsFront && s.hasAssignedSeat() && s.row < frontLimit).length;
+            const frontTotal = students.filter(s => s.needsFront).length;
+            return { pairs, frontIssues, frontOk, frontTotal };
+        }
+
+        function renderConstraintReport(extraNote) {
+            const el = document.getElementById('constraintReport');
+            if (!el) return;
+            const data = buildConstraintReportData();
+            let html = '';
+            if (extraNote) {
+                html += `<div style="margin-bottom:6px;color:#0f766e;font-weight:600;">${escapeHtml(extraNote)}</div>`;
+            }
+            if (data.pairs.length === 0) {
+                html += '<div style="margin-bottom:6px;">沒有設定不可同坐。</div>';
+            } else {
+                html += '<div style="font-weight:700;margin-bottom:4px;">不可同坐</div>';
+                data.pairs.forEach(p => {
+                    const color = p.status === '已遵守' ? '#065f46' : (p.status === '失敗' ? '#991b1b' : '#64748b');
+                    html += `<div style="color:${color};margin:2px 0;">${escapeHtml(p.label)} → <strong>${escapeHtml(p.status)}</strong></div>`;
+                });
+            }
+            if (data.frontTotal > 0) {
+                html += `<div style="font-weight:700;margin:8px 0 4px;">前排／SEN（前 ${Math.min(2, classroom.rows)} 排）</div>`;
+                if (data.frontIssues.length === 0) {
+                    html += `<div style="color:#065f46;">${data.frontOk}/${data.frontTotal} 位已在前排</div>`;
+                } else {
+                    html += `<div style="color:#92400e;">${data.frontOk}/${data.frontTotal} 位在前排；未達：${escapeHtml(data.frontIssues.join('、'))}</div>`;
+                }
+            }
+            el.innerHTML = html;
+            el.style.color = '#334155';
+        }
+
         function updateStatistics() {
             const total = students.length;
             const assigned = students.filter(s => s.hasAssignedSeat()).length;
@@ -1613,26 +1804,69 @@
             document.getElementById('assignmentRate').textContent = rate + '%';
         }
 
-        function exportSeatingChart() {
-            if (students.length === 0) {
-                showAlert('請先匯入學生資料', 'error');
-                return;
-            }
-            let csvContent = '\uFEFF座位行,座位列,班別,學號,姓名,職務\n';
+        /** 分析用 CSV：含所有格（含空位／阻擋）方便對應課室；並附左鄰／右鄰。 */
+        function buildAnalysisCsvContent() {
+            const header = '座位行,座位列,狀態,班別,學號,姓名,職務,是否前排,左鄰,右鄰';
+            const lines = [header];
             for (let row = 0; row < classroom.rows; row++) {
                 for (let col = 0; col < classroom.cols; col++) {
-                    const student = classroom.seats[row][col];
-                    if (student) {
-                        csvContent += `${row + 1},${col + 1},${student.classGroup},${student.id},${student.name},${student.position}\n`;
+                    const key = `${row}-${col}`;
+                    let status = '空位';
+                    let classGroup = '';
+                    let id = '';
+                    let name = '';
+                    let position = '';
+                    let frontFlag = '';
+                    if (classroom.blockedSeats.has(key)) {
+                        status = '阻擋';
+                    } else if (classroom.seats[row][col]) {
+                        const s = classroom.seats[row][col];
+                        status = '已分配';
+                        classGroup = s.classGroup || '';
+                        id = s.id;
+                        name = s.name;
+                        position = s.position || '';
+                        frontFlag = s.needsFront ? '是' : '否';
                     }
+                    const left = col > 0 ? classroom.seats[row][col - 1] : null;
+                    const right = col < classroom.cols - 1 ? classroom.seats[row][col + 1] : null;
+                    const leftName = left ? left.name : '';
+                    const rightName = right ? right.name : '';
+                    lines.push([
+                        row + 1,
+                        col + 1,
+                        status,
+                        csvEscape(classGroup),
+                        csvEscape(id),
+                        csvEscape(name),
+                        csvEscape(position),
+                        frontFlag,
+                        csvEscape(leftName),
+                        csvEscape(rightName)
+                    ].join(','));
                 }
             }
+            return '\uFEFF' + lines.join('\n');
+        }
+
+        function csvEscape(val) {
+            const s = String(val == null ? '' : val);
+            if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+            return s;
+        }
+
+        function exportSeatingChart() {
+            if (!classroom.seats.length) {
+                showAlert('請先建立課室', 'error');
+                return;
+            }
+            const csvContent = buildAnalysisCsvContent();
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = `${classroom.className}_座位表.csv`;
+            link.download = `${classroom.className}_座位分析.csv`;
             link.click();
-            showAlert('座位表 CSV 已匯出', 'success');
+            showAlert('分析 CSV 已匯出（含狀態、是否前排、左鄰、右鄰；空位／阻擋亦列出以便對應課室）', 'success');
         }
 
         /* ---------- Print A4 ---------- */
