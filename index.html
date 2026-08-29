@@ -185,15 +185,102 @@
             overflow: auto;
         }
 
-        .blackboard {
-            background: #1e293b;
-            color: white;
-            padding: 10px;
-            margin-bottom: 12px;
-            border-radius: 6px;
-            font-size: 1em;
-            font-weight: 700;
+        .blackboard { display: none; }
+
+        .school-form {
+            background: #fff;
+            border: 2px solid #111;
+            padding: 14px 16px 12px;
+            width: 100%;
+            max-width: 960px;
+            margin: 0 auto;
+            color: #000;
+            box-sizing: border-box;
+        }
+
+        .school-form-title {
             text-align: center;
+            font-size: 1.35em;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            margin-bottom: 12px;
+        }
+
+        .school-form-grid {
+            display: grid;
+            gap: 6px 4px;
+            width: 100%;
+            align-items: stretch;
+        }
+
+        .school-aisle {
+            min-width: 14px;
+        }
+
+        .school-form .seat {
+            width: auto;
+            height: auto;
+            min-height: 52px;
+            border: 1.5px solid #111;
+            border-radius: 0;
+            background: #fff;
+            color: #111;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .school-form .seat.occupied {
+            background: #fff;
+            color: #111;
+            border-color: #111;
+        }
+
+        .school-form .seat.blocked {
+            background: #e5e5e5;
+            color: #333;
+            border-color: #111;
+        }
+
+        .school-form .seat.selected {
+            background: #fce7f3;
+            color: #111;
+            outline: 2px solid #db2777;
+            border-color: #9d174d;
+        }
+
+        .school-form .seat.front-pref { box-shadow: inset 0 0 0 2px #b45309; }
+
+        .school-form-front-bar {
+            height: 3px;
+            background: #111;
+            margin: 12px 0 10px;
+        }
+
+        .school-form-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 16px;
+            font-size: 12px;
+        }
+
+        .school-form-teachers {
+            line-height: 1.55;
+            min-width: 0;
+        }
+
+        .school-form-desk {
+            border: 1.5px solid #111;
+            padding: 8px 22px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .school-form-hint {
+            margin-top: 8px;
+            text-align: center;
+            font-size: 11px;
+            color: var(--muted);
         }
 
         .classroom-grid {
@@ -388,10 +475,10 @@
             .header h1 { font-size: 1.25em; }
         }
 
-        /* A4 classroom-door poster print */
+        /* Official school seating form — A4 landscape */
         @page {
-            size: A4 portrait;
-            margin: 10mm;
+            size: A4 landscape;
+            margin: 8mm;
         }
 
         @media print {
@@ -405,7 +492,7 @@
                 print-color-adjust: exact;
             }
 
-            .no-print, .left-panel, .right-panel, .header, #alertContainer {
+            .no-print, .left-panel, .right-panel, .header, #alertContainer, .school-form-hint {
                 display: none !important;
             }
 
@@ -430,90 +517,34 @@
                 display: block;
             }
 
-            .classroom-container.screen-grid {
-                display: none !important;
+            .classroom-container {
+                border: none;
+                padding: 0;
+                max-width: none;
+                box-shadow: none;
             }
 
-            .print-only {
-                display: block !important;
+            .school-form {
+                max-width: none;
+                border-width: 1.5px;
+                padding: 6mm 8mm 5mm;
             }
 
-            .print-poster {
-                width: 100%;
-                color: #000;
-                font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+            .school-form-title { font-size: 16pt; margin-bottom: 8px; }
+
+            .school-form .seat {
+                min-height: 22mm;
+                font-size: 10pt;
+                box-shadow: none !important;
             }
 
-            .print-poster .print-title {
-                text-align: center;
-                font-size: 18pt;
-                font-weight: 800;
-                margin-bottom: 4px;
+            .school-form .seat.selected {
+                background: #fff !important;
+                outline: none;
             }
 
-            .print-poster .print-meta {
-                text-align: center;
-                font-size: 11pt;
-                margin-bottom: 8px;
-            }
-
-            .print-poster .print-board {
-                border: 2px solid #000;
-                background: #111 !important;
-                color: #fff !important;
-                text-align: center;
-                padding: 8px;
-                font-weight: 700;
-                margin-bottom: 10px;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-
-            .print-grid {
-                display: grid;
-                gap: 2px;
-                width: 100%;
-                border: 1.5px solid #000;
-                padding: 3px;
-            }
-
-            .print-cell {
-                border: 1px solid #333;
-                min-height: 28px;
-                padding: 2px;
-                text-align: center;
-                font-size: 8pt;
-                line-height: 1.2;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                flex-direction: column;
-                overflow: hidden;
-            }
-
-            .print-cell.blocked {
-                background: #ddd !important;
-                color: #555;
-            }
-
-            .print-cell.empty { color: #999; font-size: 7pt; }
-
-            .print-legend {
-                margin-top: 10px;
-                font-size: 9pt;
-                border-top: 1px solid #999;
-                padding-top: 6px;
-                display: flex;
-                flex-wrap: wrap;
-                gap: 10px;
-            }
-
-            .print-footer {
-                margin-top: 8px;
-                font-size: 8pt;
-                color: #555;
-                text-align: center;
-            }
+            .school-form-desk { font-size: 11pt; }
+            .school-form-teachers { font-size: 10pt; }
         }
     </style>
 </head>
@@ -521,7 +552,7 @@
     <div class="container">
         <div class="header no-print">
             <h1>終極課室座位表</h1>
-            <p>港校班主任的排位＋課室管理：不可同坐、擋壞桌、前排／SEN、A4 門海報、本機模板</p>
+            <p>港校班主任的排位＋課室管理：不可同坐、擋壞桌、前排／SEN、A4 學校座位表、本機模板</p>
         </div>
 
         <div class="main-content">
@@ -534,7 +565,11 @@
                     </div>
                     <div class="form-group">
                         <label>班別名稱</label>
-                        <input type="text" id="className" placeholder="例：中三甲" value="中三甲">
+                        <input type="text" id="className" placeholder="例：1B 或 中三甲" value="中三甲">
+                    </div>
+                    <div class="form-group">
+                        <label>室</label>
+                        <input type="text" id="roomName" placeholder="例：102" value="">
                     </div>
                     <div class="form-group">
                         <label>日期（列印用）</label>
@@ -547,8 +582,20 @@
                         </div>
                         <div class="form-group">
                             <label>列數（最多 12）</label>
-                            <input type="number" id="cols" min="2" max="12" value="7">
+                            <input type="number" id="cols" min="2" max="12" value="6">
                         </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Class Teacher 1（選填）</label>
+                        <input type="text" id="classTeacher1" placeholder="班主任 1" value="">
+                    </div>
+                    <div class="form-group">
+                        <label>Class Teacher 2（選填）</label>
+                        <input type="text" id="classTeacher2" placeholder="班主任 2" value="">
+                    </div>
+                    <div class="form-group">
+                        <label>Class Teacher 3（選填）</label>
+                        <input type="text" id="classTeacher3" placeholder="班主任 3" value="">
                     </div>
                     <button type="button" class="btn" onclick="createClassroom()">建立／套用課室</button>
                     <p class="hint">一般中學課室約 5–7 行 × 6–8 列即可；格數較大時畫面會自動縮小。</p>
@@ -568,7 +615,7 @@
                         <button type="button" class="btn btn-secondary btn-small" onclick="loadSelectedTemplate()">載入</button>
                         <button type="button" class="btn btn-danger btn-small" onclick="deleteSelectedTemplate()">刪</button>
                     </div>
-                    <p class="hint">只存名稱、行列、阻擋座位；學生名單只留在本機瀏覽器，不上傳。</p>
+                    <p class="hint">只存名稱、行列、室、班主任欄、阻擋座位；學生名單只留在本機瀏覽器，不上傳。</p>
                 </div>
 
                 <div class="section">
@@ -592,7 +639,7 @@
                             </label>
                         </div>
                     </div>
-                    <button type="button" class="btn btn-secondary" onclick="createSampleData()">建立班內範例（40 人）</button>
+                    <button type="button" class="btn btn-secondary" onclick="createSampleData()">建立班內範例（36 人）</button>
                     <button type="button" class="btn btn-success" onclick="downloadSampleCSV()">下載範例 CSV</button>
                     <div class="students-list" id="studentsList">
                         <div style="text-align:center;color:#999;padding:12px;font-size:12px;">尚未匯入學生資料</div>
@@ -614,15 +661,9 @@
             </div>
 
             <div class="center-panel">
-                <div class="classroom-container screen-grid">
-                    <div class="blackboard" id="blackboard">黑板 — 中三甲</div>
-                    <div id="classroomGrid" class="classroom-grid">
-                        <div style="color:#999;padding:40px;text-align:center;">請先建立教室布局</div>
-                    </div>
+                <div class="classroom-container screen-grid" id="schoolFormHost">
+                    <div style="color:#999;padding:40px;text-align:center;">請先建立教室布局</div>
                 </div>
-
-                <!-- Print poster (hidden on screen) -->
-                <div class="print-only print-poster" id="printPoster" aria-hidden="true"></div>
             </div>
 
             <div class="right-panel no-print">
@@ -634,7 +675,7 @@
                     <button type="button" class="btn btn-danger" onclick="resetSeats()">重置座位</button>
                     <button type="button" class="btn btn-secondary" onclick="clearBlocked()">清除阻擋</button>
                     <button type="button" class="btn btn-success" onclick="exportSeatingChart()">匯出分析 CSV</button>
-                    <p class="hint">再次智能分配會盡量換位（記得上次方案）；匯出 CSV 含左鄰／右鄰供 Excel 分析，海報請用列印。</p>
+                    <p class="hint">再次智能分配會盡量換位（記得上次方案）；匯出 CSV 含左鄰／右鄰供 Excel 分析。列印為學校正式 A4 橫向座位表。</p>
                 </div>
 
                 <div class="section">
@@ -715,9 +756,11 @@
         let students = [];
         let classroom = {
             rows: 6,
-            cols: 7,
+            cols: 6,
             className: '中三甲',
             schoolName: '',
+            room: '',
+            teachers: ['', '', ''],
             seats: [],
             blockedSeats: new Set()
         };
@@ -797,76 +840,146 @@
             classroom.cols = cols;
             classroom.className = className;
             classroom.schoolName = schoolName;
+            syncFormMetaFromInputs();
             classroom.seats = Array.from({ length: rows }, () => Array(cols).fill(null));
             classroom.blockedSeats = keepBlocked;
 
             students.forEach(s => s.clearSeat());
             selectedSeat = null;
-            updateBlackboard();
             renderClassroom();
             updateStatistics();
             updateStudentsList();
             showAlert(`課室已套用：${rows}×${cols}`, 'success');
         }
 
-        function updateBlackboard() {
-            const school = document.getElementById('schoolName').value.trim();
-            classroom.schoolName = school;
-            classroom.className = document.getElementById('className').value.trim() || classroom.className;
-            const prefix = school ? `${school} · ` : '';
-            document.getElementById('blackboard').textContent =
-                `黑板 — ${prefix}${classroom.className}`;
+        function readTeachersFromInputs() {
+            return [
+                (document.getElementById('classTeacher1') || {}).value || '',
+                (document.getElementById('classTeacher2') || {}).value || '',
+                (document.getElementById('classTeacher3') || {}).value || ''
+            ].map(v => String(v).trim());
         }
 
-        function seatSizeVars() {
-            const cols = classroom.cols;
-            const rows = classroom.rows;
-            let w = 72, h = 56, fs = 11;
-            if (cols >= 15 || rows >= 18) { w = 42; h = 34; fs = 8; }
-            else if (cols >= 12 || rows >= 14) { w = 52; h = 42; fs = 9; }
-            else if (cols >= 9 || rows >= 10) { w = 60; h = 48; fs = 10; }
-            return { w, h, fs };
+        function syncFormMetaFromInputs() {
+            const classEl = document.getElementById('className');
+            const roomEl = document.getElementById('roomName');
+            const schoolEl = document.getElementById('schoolName');
+            if (classEl) classroom.className = classEl.value.trim() || classroom.className;
+            if (roomEl) classroom.room = roomEl.value.trim();
+            if (schoolEl) classroom.schoolName = schoolEl.value.trim();
+            classroom.teachers = readTeachersFromInputs();
+        }
+
+        function bindLiveFormFields() {
+            ['className', 'roomName', 'schoolName', 'classTeacher1', 'classTeacher2', 'classTeacher3'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('input', function () {
+                    syncFormMetaFromInputs();
+                    if (classroom.seats.length) renderClassroom();
+                });
+            });
+        }
+
+        function formatSchoolFormTitle(className, room) {
+            const cls = String(className || '').trim() || '　';
+            const rm = String(room || '').trim() || '　';
+            return `${cls}班/科座位表 (${rm}室)`;
+        }
+
+        function schoolFormGridColumns(cols) {
+            const n = Number(cols);
+            if (n >= 2 && n % 2 === 0) {
+                const half = n / 2;
+                return `repeat(${half}, 1fr) 18px repeat(${half}, 1fr)`;
+            }
+            return `repeat(${n}, 1fr)`;
+        }
+
+        function buildSchoolFormHtml(opts) {
+            const className = opts.className || '';
+            const room = opts.room || '';
+            const rows = opts.rows;
+            const cols = opts.cols;
+            const seats = opts.seats || [];
+            const blocked = opts.blockedSeats instanceof Set
+                ? opts.blockedSeats
+                : new Set(opts.blockedSeats || []);
+            const teachers = opts.teachers || ['', '', ''];
+            const selected = opts.selectedSeat || null;
+            const interactive = !!opts.interactive;
+            const escape = typeof escapeHtml === 'function' ? escapeHtml : function (s) { return String(s); };
+
+            const title = formatSchoolFormTitle(className, room);
+            const hasAisle = cols % 2 === 0;
+            const half = cols / 2;
+            const colStyle = schoolFormGridColumns(cols);
+
+            let cells = '';
+            for (let r = rows - 1; r >= 0; r--) {
+                for (let c = 0; c < cols; c++) {
+                    if (hasAisle && c === half) {
+                        cells += '<div class="school-aisle" aria-hidden="true"></div>';
+                    }
+                    const key = `${r}-${c}`;
+                    const student = seats[r] && seats[r][c] ? seats[r][c] : null;
+                    const isBlocked = blocked.has(key);
+                    const isSelected = selected && selected[0] === r && selected[1] === c;
+                    let cls = 'seat';
+                    if (isBlocked) cls += ' blocked';
+                    else if (student) {
+                        cls += ' occupied';
+                        if (student.needsFront) cls += ' front-pref';
+                    }
+                    if (isSelected) cls += ' selected';
+
+                    let inner = '';
+                    if (isBlocked) inner = '擋';
+                    else if (student) inner = `<strong>${escape(student.name || '')}</strong>`;
+
+                    const click = interactive ? ` onclick="onSeatClick(${r},${c})"` : '';
+                    cells += `<div class="${cls}" data-row="${r}" data-col="${c}"${click}>${inner}</div>`;
+                }
+            }
+
+            const t1 = escape(teachers[0] || '');
+            const t2 = escape(teachers[1] || '');
+            const t3 = escape(teachers[2] || '');
+
+            return `<div class="school-form">
+        <div class="school-form-title">${escape(title)}</div>
+        <div class="school-form-grid" style="grid-template-columns:${colStyle}">${cells}</div>
+        <div class="school-form-front-bar"></div>
+        <div class="school-form-footer">
+            <div class="school-form-teachers">
+                <div>Class Teacher 1${t1 ? '：' + t1 : ''}</div>
+                <div>Class Teacher 2${t2 ? '：' + t2 : ''}</div>
+                <div>Class Teacher 3${t3 ? '：' + t3 : ''}</div>
+            </div>
+            <div class="school-form-desk">教師桌</div>
+        </div>
+    </div>${interactive ? '<p class="school-form-hint no-print">下方為課室前方（教師桌）。偶數欄會在中間留走道。</p>' : ''}`;
         }
 
         function renderClassroom() {
-            const grid = document.getElementById('classroomGrid');
-            const { w, h, fs } = seatSizeVars();
-            grid.style.setProperty('--seat-w', w + 'px');
-            grid.style.setProperty('--seat-h', h + 'px');
-            grid.style.setProperty('--seat-fs', fs + 'px');
-            grid.innerHTML = '';
-            grid.style.gridTemplateColumns = `repeat(${classroom.cols}, ${w}px)`;
-
-            for (let row = 0; row < classroom.rows; row++) {
-                for (let col = 0; col < classroom.cols; col++) {
-                    const seat = document.createElement('div');
-                    seat.className = 'seat';
-                    seat.dataset.row = row;
-                    seat.dataset.col = col;
-                    seat.onclick = () => onSeatClick(row, col);
-
-                    const seatKey = `${row}-${col}`;
-                    const student = classroom.seats[row][col];
-
-                    if (classroom.blockedSeats.has(seatKey)) {
-                        seat.classList.add('blocked');
-                        seat.innerHTML = `<div>擋<br><small>${row + 1},${col + 1}</small></div>`;
-                    } else if (student) {
-                        seat.classList.add('occupied');
-                        if (student.needsFront) seat.classList.add('front-pref');
-                        const sub = [student.classGroup, student.position].filter(Boolean).join(' · ');
-                        seat.innerHTML = `<div>${escapeHtml(student.name)}${sub ? `<br><small>${escapeHtml(sub)}</small>` : ''}</div>`;
-                    } else {
-                        seat.innerHTML = `<div>空<br><small>${row + 1},${col + 1}</small></div>`;
-                    }
-
-                    if (selectedSeat && selectedSeat[0] === row && selectedSeat[1] === col) {
-                        seat.classList.add('selected');
-                    }
-
-                    grid.appendChild(seat);
-                }
+            const host = document.getElementById('schoolFormHost');
+            if (!host) return;
+            if (!classroom.seats.length) {
+                host.innerHTML = '<div style="color:#999;padding:40px;text-align:center;">請先建立教室布局</div>';
+                return;
             }
+            syncFormMetaFromInputs();
+            host.innerHTML = buildSchoolFormHtml({
+                className: classroom.className,
+                room: classroom.room,
+                rows: classroom.rows,
+                cols: classroom.cols,
+                seats: classroom.seats,
+                blockedSeats: classroom.blockedSeats,
+                teachers: classroom.teachers,
+                selectedSeat,
+                interactive: true
+            });
         }
 
         function escapeHtml(str) {
@@ -961,11 +1074,14 @@
             const name = document.getElementById('templateName').value.trim() ||
                 `${classroom.className || '教室'} ${classroom.rows}×${classroom.cols}`;
             const list = loadTemplateList();
+            syncFormMetaFromInputs();
             const payload = {
                 name,
                 rows: classroom.rows,
                 cols: classroom.cols,
                 blockedSeats: Array.from(classroom.blockedSeats),
+                room: classroom.room || '',
+                teachers: classroom.teachers.slice(),
                 savedAt: new Date().toISOString()
             };
             const idx = list.findIndex(t => t.name === name);
@@ -992,8 +1108,20 @@
             document.getElementById('rows').value = t.rows;
             document.getElementById('cols').value = t.cols;
             document.getElementById('templateName').value = t.name;
+            if (document.getElementById('roomName')) {
+                document.getElementById('roomName').value = t.room || '';
+            }
+            const teachers = Array.isArray(t.teachers) ? t.teachers : ['', '', ''];
+            const t1 = document.getElementById('classTeacher1');
+            const t2 = document.getElementById('classTeacher2');
+            const t3 = document.getElementById('classTeacher3');
+            if (t1) t1.value = teachers[0] || '';
+            if (t2) t2.value = teachers[1] || '';
+            if (t3) t3.value = teachers[2] || '';
             createClassroom();
             classroom.blockedSeats = new Set(t.blockedSeats || []);
+            classroom.room = t.room || '';
+            classroom.teachers = [teachers[0] || '', teachers[1] || '', teachers[2] || ''];
             renderClassroom();
             updateStatistics();
             showAlert(`已載入模板「${t.name}」`, 'success');
@@ -1053,11 +1181,7 @@
                 new Student('33', '韓啟明', '', '中三甲', false),
                 new Student('34', '黎美寶', '', '中三甲', false),
                 new Student('35', '施浩天', '', '中三甲', false),
-                new Student('36', '莫嘉怡', '', '中三甲', false),
-                new Student('37', '岑偉業', '', '中三甲', false),
-                new Student('38', '古曉嵐', '', '中三甲', false),
-                new Student('39', '區俊傑', '', '中三甲', false),
-                new Student('40', '巫詠詩', '', '中三甲', false)
+                new Student('36', '莫嘉怡', '', '中三甲', false)
             ];
             constraints = [
                 { student1: '05', student2: '07', type: 'all', name1: '張偉強', name2: '吳家豪' },
@@ -1069,7 +1193,7 @@
             updateStudentsList();
             updateStatistics();
             clearConstraintReport();
-            showAlert('已建立 40 人班內範例，並加入 3 組不可同坐（示範用）', 'success');
+            showAlert('已建立 36 人班內範例，並加入 3 組不可同坐（示範用）', 'success');
         }
 
         function importCSV() {
@@ -1869,59 +1993,14 @@
             showAlert('分析 CSV 已匯出（含狀態、是否前排、左鄰、右鄰；空位／阻擋亦列出以便對應課室）', 'success');
         }
 
-        /* ---------- Print A4 ---------- */
-
-        function buildPrintPoster() {
-            updateBlackboard();
-            const school = document.getElementById('schoolName').value.trim();
-            const dateVal = document.getElementById('chartDate').value;
-            const dateText = dateVal || new Date().toISOString().slice(0, 10);
-            const opts = getSolverOptions();
-
-            let legend = ['白格＝空位', '灰格＝阻擋／結構', '姓名＝已分配'];
-            if (opts.checkerboard) legend.push('已啟用梅花座');
-            if (opts.disperseGroup) legend.push('同班別已盡量分散');
-            if (constraints.length) legend.push(`不可同坐 ${constraints.length} 組`);
-
-            const cellMin = Math.max(18, Math.min(36, Math.floor(240 / Math.max(classroom.rows, 1))));
-
-            let gridHtml = `<div class="print-grid" style="grid-template-columns:repeat(${classroom.cols},1fr);">`;
-            for (let row = 0; row < classroom.rows; row++) {
-                for (let col = 0; col < classroom.cols; col++) {
-                    const key = `${row}-${col}`;
-                    const student = classroom.seats[row][col];
-                    if (classroom.blockedSeats.has(key)) {
-                        gridHtml += `<div class="print-cell blocked" style="min-height:${cellMin}px;">擋</div>`;
-                    } else if (student) {
-                        const sub = [student.classGroup, student.id].filter(Boolean).join(' ');
-                        gridHtml += `<div class="print-cell" style="min-height:${cellMin}px;"><strong>${escapeHtml(student.name)}</strong>${sub ? `<span style="font-size:7pt;">${escapeHtml(sub)}</span>` : ''}</div>`;
-                    } else {
-                        gridHtml += `<div class="print-cell empty" style="min-height:${cellMin}px;">${row + 1},${col + 1}</div>`;
-                    }
-                }
-            }
-            gridHtml += '</div>';
-
-            const title = school
-                ? `${escapeHtml(school)}　${escapeHtml(classroom.className)}`
-                : escapeHtml(classroom.className);
-
-            document.getElementById('printPoster').innerHTML = `
-                <div class="print-title">${title}</div>
-                <div class="print-meta">課室座位表　｜　日期：${escapeHtml(dateText)}　｜　${classroom.rows} 行 × ${classroom.cols} 列</div>
-                <div class="print-board">黑板（此方向為前方）</div>
-                ${gridHtml}
-                <div class="print-legend">${legend.map(l => `<span>• ${escapeHtml(l)}</span>`).join('')}</div>
-                <div class="print-footer">終極課室座位表 · 資料僅存於此裝置瀏覽器 · 請核對後張貼於課室門</div>
-            `;
-        }
+        /* ---------- Print A4 school form ---------- */
 
         function printSeatingChart() {
             if (!classroom.seats.length) {
                 showAlert('請先建立課室', 'error');
                 return;
             }
-            buildPrintPoster();
+            renderClassroom();
             window.print();
         }
 
@@ -1937,10 +2016,11 @@
             const today = new Date();
             document.getElementById('chartDate').value = today.toISOString().slice(0, 10);
             refreshTemplateSelect();
+            bindLiveFormFields();
             createClassroom();
             updateStatistics();
             updateConstraintsDisplay();
-            showAlert('歡迎使用：匯入名單 → 擋壞桌 → 設不可同坐 → 智能分配 → 列印 A4 課室門海報', 'success');
+            showAlert('歡迎使用：匯入名單 → 擋壞桌 → 設不可同坐 → 智能分配 → 列印學校 A4 座位表', 'success');
         });
     </script>
 </body>

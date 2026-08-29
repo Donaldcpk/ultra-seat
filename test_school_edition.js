@@ -243,6 +243,93 @@ function buildAnalysisCsvRows({ rows, cols, seats, blocked, studentsById }) {
     return out;
 }
 
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function formatSchoolFormTitle(className, room) {
+    const cls = String(className || '').trim() || '　';
+    const rm = String(room || '').trim() || '　';
+    return `${cls}班/科座位表 (${rm}室)`;
+}
+
+function schoolFormGridColumns(cols) {
+    const n = Number(cols);
+    if (n >= 2 && n % 2 === 0) {
+        const half = n / 2;
+        return `repeat(${half}, 1fr) 18px repeat(${half}, 1fr)`;
+    }
+    return `repeat(${n}, 1fr)`;
+}
+
+function buildSchoolFormHtml(opts) {
+    const className = opts.className || '';
+    const room = opts.room || '';
+    const rows = opts.rows;
+    const cols = opts.cols;
+    const seats = opts.seats || [];
+    const blocked = opts.blockedSeats instanceof Set
+        ? opts.blockedSeats
+        : new Set(opts.blockedSeats || []);
+    const teachers = opts.teachers || ['', '', ''];
+    const selected = opts.selectedSeat || null;
+    const interactive = !!opts.interactive;
+
+    const title = formatSchoolFormTitle(className, room);
+    const hasAisle = cols % 2 === 0;
+    const half = cols / 2;
+    const colStyle = schoolFormGridColumns(cols);
+
+    let cells = '';
+    for (let r = rows - 1; r >= 0; r--) {
+        for (let c = 0; c < cols; c++) {
+            if (hasAisle && c === half) {
+                cells += '<div class="school-aisle" aria-hidden="true"></div>';
+            }
+            const key = `${r}-${c}`;
+            const student = seats[r] && seats[r][c] ? seats[r][c] : null;
+            const isBlocked = blocked.has(key);
+            const isSelected = selected && selected[0] === r && selected[1] === c;
+            let cls = 'seat';
+            if (isBlocked) cls += ' blocked';
+            else if (student) {
+                cls += ' occupied';
+                if (student.needsFront) cls += ' front-pref';
+            }
+            if (isSelected) cls += ' selected';
+
+            let inner = '';
+            if (isBlocked) inner = '擋';
+            else if (student) inner = `<strong>${escapeHtml(student.name || '')}</strong>`;
+
+            const click = interactive ? ` onclick="onSeatClick(${r},${c})"` : '';
+            cells += `<div class="${cls}" data-row="${r}" data-col="${c}"${click}>${inner}</div>`;
+        }
+    }
+
+    const t1 = escapeHtml(teachers[0] || '');
+    const t2 = escapeHtml(teachers[1] || '');
+    const t3 = escapeHtml(teachers[2] || '');
+
+    return `<div class="school-form">
+        <div class="school-form-title">${escapeHtml(title)}</div>
+        <div class="school-form-grid" style="grid-template-columns:${colStyle}">${cells}</div>
+        <div class="school-form-front-bar"></div>
+        <div class="school-form-footer">
+            <div class="school-form-teachers">
+                <div>Class Teacher 1${t1 ? '：' + t1 : ''}</div>
+                <div>Class Teacher 2${t2 ? '：' + t2 : ''}</div>
+                <div>Class Teacher 3${t3 ? '：' + t3 : ''}</div>
+            </div>
+            <div class="school-form-desk">教師桌</div>
+        </div>
+    </div>${interactive ? '<p class="school-form-hint no-print">下方為課室前方（教師桌）。偶數欄會在中間留走道。</p>' : ''}`;
+}
+
 function assert(cond, msg) {
     if (!cond) throw new Error('FAIL: ' + msg);
 }
@@ -388,5 +475,42 @@ passed++;
 // 9) 無性別推測
 assert(typeof globalThis.guessGender === 'undefined', 'no gender guess');
 passed++;
+
+// 10) 學校正式座位表 HTML：標題、教師桌、姓名在非 print-only
+{
+    const seats = Array.from({ length: 6 }, () => Array(6).fill(null));
+    seats[0][0] = { name: '陳志明', id: '01', classGroup: '1B', needsFront: false };
+    seats[0][1] = { name: '李美玲', id: '02', classGroup: '1B', needsFront: false };
+    const html = buildSchoolFormHtml({
+        className: '1B',
+        room: '102',
+        rows: 6,
+        cols: 6,
+        seats,
+        blockedSeats: new Set(['5-5']),
+        teachers: ['王詠珊', '鄭百喬', ''],
+        interactive: false
+    });
+    assert(html.includes('1B班/科座位表 (102室)'), 'official title');
+    assert(html.includes('班/科座位表'), 'title phrase');
+    assert(html.includes('教師桌'), 'teacher desk');
+    assert(html.includes('Class Teacher 1：王詠珊'), 'class teacher 1');
+    assert(html.includes('Class Teacher 2：鄭百喬'), 'class teacher 2');
+    assert(html.includes('陳志明'), 'student name visible');
+    assert(html.includes('李美玲'), 'second name visible');
+    assert(!html.includes('print-only'), 'not print-only wrapper');
+    assert(!html.includes('終極課室座位表'), 'no product brand on form');
+    assert(html.includes('school-aisle'), 'center aisle for even cols');
+    assert(html.includes('擋'), 'blocked seat mark');
+    const titleIdx = html.indexOf('1B班/科座位表');
+    const nameIdx = html.indexOf('陳志明');
+    const deskIdx = html.indexOf('教師桌');
+    assert(titleIdx < nameIdx && nameIdx < deskIdx, 'title then names then teacher desk');
+    const emptyTitle = formatSchoolFormTitle('', '');
+    assert(emptyTitle === '　班/科座位表 (　室)', 'blank class/room placeholders');
+    assert(schoolFormGridColumns(6).includes('18px'), '6-col aisle track');
+    assert(!schoolFormGridColumns(5).includes('18px'), 'odd cols no aisle');
+    passed++;
+}
 
 console.log(`OK: ${passed} test groups passed`);
