@@ -4,6 +4,18 @@
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-08-29
+
+### Added
+- 學校正式「班/科座位表 (室)」A4 橫向預覽與列印：中間走道、列序反轉（前方在下）、教師桌、Class Teacher 1/2/3
+- 課室設定新增「室」與三位班主任欄；班名／室改字即更新標題
+- 本機模板可一併儲存室與班主任欄（仍不含學生名單）
+
+### Changed
+- 中間畫布改為官方表格（所見即所得），不再用黑板海報風作為主畫面與列印稿
+- 預設格網改 6×6；班內範例改 36 人
+- 列印改 A4 橫向，去掉「終極課室座位表」產品名與深色黑板條
+
 ## [2.3.0] - 2026-08-27
 
 ### Added
@@ -52,7 +64,8 @@
 ### Added
 - 初版 CSV、隨機分配、Python GUI
 
-[Unreleased]: https://github.com/Donaldcpk/ultra-seat/compare/v2.3.0...HEAD
+[Unreleased]: https://github.com/Donaldcpk/ultra-seat/compare/v2.4.0...HEAD
+[2.4.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.0.0...v2.1.0
