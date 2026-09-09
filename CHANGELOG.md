@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-09-09
+
+### Added
+- 「匯出橫向 PDF」：A4 橫向、嚴格跟學校紙本範本（jsPDF + html2canvas；失敗則改列印另存）
+
+### Changed
+- 官方表格去掉中間走道與表上 Class Teacher；標題改為 `班/科座位表(室)`
+- 6 欄後排左一格留空以對齊範本；右下教師桌；**黑板橫條改到最下方**
+
 ## [2.4.0] - 2026-08-29
 
 ### Added
@@ -64,7 +73,8 @@
 ### Added
 - 初版 CSV、隨機分配、Python GUI
 
-[Unreleased]: https://github.com/Donaldcpk/ultra-seat/compare/v2.4.0...HEAD
+[Unreleased]: https://github.com/Donaldcpk/ultra-seat/compare/v2.5.0...HEAD
+[2.5.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.1.0...v2.2.0

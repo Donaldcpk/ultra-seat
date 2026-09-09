@@ -189,10 +189,10 @@
 
         .school-form {
             background: #fff;
-            border: 2px solid #111;
-            padding: 14px 16px 12px;
+            border: none;
+            padding: 10px 8px 8px;
             width: 100%;
-            max-width: 960px;
+            max-width: 980px;
             margin: 0 auto;
             color: #000;
             box-sizing: border-box;
@@ -200,29 +200,29 @@
 
         .school-form-title {
             text-align: center;
-            font-size: 1.35em;
-            font-weight: 800;
-            letter-spacing: 0.04em;
-            margin-bottom: 12px;
+            font-size: 1.15em;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            margin: 4px 0 18px;
         }
 
         .school-form-grid {
             display: grid;
-            gap: 6px 4px;
+            gap: 14px 16px;
             width: 100%;
             align-items: stretch;
         }
 
-        .school-aisle {
-            min-width: 14px;
+        .school-seat-spacer {
+            min-height: 48px;
         }
 
         .school-form .seat {
             width: auto;
             height: auto;
-            min-height: 52px;
+            min-height: 48px;
             border: 1.5px solid #111;
-            border-radius: 0;
+            border-radius: 3px;
             background: #fff;
             color: #111;
             font-size: 12px;
@@ -236,7 +236,7 @@
         }
 
         .school-form .seat.blocked {
-            background: #e5e5e5;
+            background: #f3f3f3;
             color: #333;
             border-color: #111;
         }
@@ -250,30 +250,27 @@
 
         .school-form .seat.front-pref { box-shadow: inset 0 0 0 2px #b45309; }
 
-        .school-form-front-bar {
-            height: 3px;
-            background: #111;
-            margin: 12px 0 10px;
-        }
-
-        .school-form-footer {
+        .school-form-desk-row {
             display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            gap: 16px;
-            font-size: 12px;
-        }
-
-        .school-form-teachers {
-            line-height: 1.55;
-            min-width: 0;
+            justify-content: flex-end;
+            margin: 22px 0 12px;
         }
 
         .school-form-desk {
             border: 1.5px solid #111;
-            padding: 8px 22px;
-            font-weight: 800;
+            padding: 14px 36px;
+            font-weight: 700;
             white-space: nowrap;
+            box-shadow: 2px 2px 0 #c4c4c4;
+            background: #fff;
+        }
+
+        .school-form-blackboard {
+            border: 2px solid #111;
+            height: 16px;
+            width: 100%;
+            background: #fff;
+            box-sizing: border-box;
         }
 
         .school-form-hint {
@@ -282,6 +279,41 @@
             font-size: 11px;
             color: var(--muted);
         }
+
+        .pdf-export-host {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 297mm;
+            height: 210mm;
+            background: #fff;
+            z-index: -1;
+            opacity: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .pdf-export-host.is-capturing {
+            z-index: 99999;
+            opacity: 1;
+            pointer-events: none;
+        }
+
+        .pdf-export-host .school-form {
+            width: 297mm;
+            height: 210mm;
+            max-width: none;
+            padding: 10mm 14mm 8mm;
+            box-sizing: border-box;
+        }
+
+        .pdf-export-host .school-form .seat {
+            min-height: 18mm;
+            font-size: 11pt;
+            box-shadow: none;
+        }
+
+        .pdf-export-host .school-form-blackboard { height: 8mm; }
 
         .classroom-grid {
             display: grid;
@@ -526,14 +558,16 @@
 
             .school-form {
                 max-width: none;
-                border-width: 1.5px;
-                padding: 6mm 8mm 5mm;
+                border: none;
+                padding: 4mm 8mm 3mm;
             }
 
-            .school-form-title { font-size: 16pt; margin-bottom: 8px; }
+            .school-form-title { font-size: 14pt; margin-bottom: 8mm; }
+
+            .school-form-grid { gap: 6mm 7mm; }
 
             .school-form .seat {
-                min-height: 22mm;
+                min-height: 16mm;
                 font-size: 10pt;
                 box-shadow: none !important;
             }
@@ -543,8 +577,9 @@
                 outline: none;
             }
 
-            .school-form-desk { font-size: 11pt; }
-            .school-form-teachers { font-size: 10pt; }
+            .school-form-desk { font-size: 12pt; padding: 4mm 10mm; }
+            .school-form-blackboard { height: 6mm; }
+            .pdf-export-host { display: none !important; }
         }
     </style>
 </head>
@@ -552,7 +587,7 @@
     <div class="container">
         <div class="header no-print">
             <h1>終極課室座位表</h1>
-            <p>港校班主任的排位＋課室管理：不可同坐、擋壞桌、前排／SEN、A4 學校座位表、本機模板</p>
+            <p>港校班主任的排位＋課室管理：不可同坐、擋壞桌、前排／SEN、A4 橫向 PDF、本機模板</p>
         </div>
 
         <div class="main-content">
@@ -671,11 +706,12 @@
                     <h3>座位操作</h3>
                     <button type="button" class="btn" onclick="randomAssign()">隨機分配</button>
                     <button type="button" class="btn btn-warning" onclick="smartAssign()">智能分配（含週更）</button>
-                    <button type="button" class="btn btn-accent" onclick="printSeatingChart()">列印 A4 座位表</button>
+                    <button type="button" class="btn btn-accent" onclick="exportLandscapePdf()">匯出橫向 PDF</button>
+                    <button type="button" class="btn btn-secondary" onclick="printSeatingChart()">列印（備用）</button>
                     <button type="button" class="btn btn-danger" onclick="resetSeats()">重置座位</button>
                     <button type="button" class="btn btn-secondary" onclick="clearBlocked()">清除阻擋</button>
                     <button type="button" class="btn btn-success" onclick="exportSeatingChart()">匯出分析 CSV</button>
-                    <p class="hint">再次智能分配會盡量換位（記得上次方案）；匯出 CSV 含左鄰／右鄰供 Excel 分析。列印為學校正式 A4 橫向座位表。</p>
+                    <p class="hint">匯出為 A4 橫向 PDF，版面嚴格跟學校範本：黑板在最下方。分析 CSV 另供 Excel 用。</p>
                 </div>
 
                 <div class="section">
@@ -744,6 +780,7 @@
             </div>
         </div>
     </div>
+    <div id="pdfExportHost" class="pdf-export-host no-print" aria-hidden="true"></div>
 
     <script>
         const MAX_ROWS = 12;
@@ -882,18 +919,17 @@
         }
 
         function formatSchoolFormTitle(className, room) {
-            const cls = String(className || '').trim() || '　';
-            const rm = String(room || '').trim() || '　';
-            return `${cls}班/科座位表 (${rm}室)`;
+            const cls = String(className || '').trim() || '______';
+            const rm = String(room || '').trim() || '______';
+            return `${cls}班/科座位表(${rm}室)`;
         }
 
         function schoolFormGridColumns(cols) {
-            const n = Number(cols);
-            if (n >= 2 && n % 2 === 0) {
-                const half = n / 2;
-                return `repeat(${half}, 1fr) 18px repeat(${half}, 1fr)`;
-            }
-            return `repeat(${n}, 1fr)`;
+            return `repeat(${Number(cols)}, 1fr)`;
+        }
+
+        function isOfficialBackLeftGap(rows, cols, r, c) {
+            return Number(cols) === 6 && r === rows - 1 && c === 0;
         }
 
         function buildSchoolFormHtml(opts) {
@@ -905,36 +941,38 @@
             const blocked = opts.blockedSeats instanceof Set
                 ? opts.blockedSeats
                 : new Set(opts.blockedSeats || []);
-            const teachers = opts.teachers || ['', '', ''];
             const selected = opts.selectedSeat || null;
             const interactive = !!opts.interactive;
+            const officialExport = !!opts.officialExport;
             const escape = typeof escapeHtml === 'function' ? escapeHtml : function (s) { return String(s); };
 
             const title = formatSchoolFormTitle(className, room);
-            const hasAisle = cols % 2 === 0;
-            const half = cols / 2;
             const colStyle = schoolFormGridColumns(cols);
 
             let cells = '';
             for (let r = rows - 1; r >= 0; r--) {
                 for (let c = 0; c < cols; c++) {
-                    if (hasAisle && c === half) {
-                        cells += '<div class="school-aisle" aria-hidden="true"></div>';
-                    }
                     const key = `${r}-${c}`;
                     const student = seats[r] && seats[r][c] ? seats[r][c] : null;
                     const isBlocked = blocked.has(key);
-                    const isSelected = selected && selected[0] === r && selected[1] === c;
+                    if (isOfficialBackLeftGap(rows, cols, r, c) && !student) {
+                        cells += '<div class="school-seat-spacer" aria-hidden="true"></div>';
+                        continue;
+                    }
+                    const isSelected = !officialExport && selected && selected[0] === r && selected[1] === c;
                     let cls = 'seat';
-                    if (isBlocked) cls += ' blocked';
-                    else if (student) {
+                    if (officialExport) {
+                        if (student) cls += ' occupied';
+                    } else if (isBlocked) {
+                        cls += ' blocked';
+                    } else if (student) {
                         cls += ' occupied';
                         if (student.needsFront) cls += ' front-pref';
                     }
                     if (isSelected) cls += ' selected';
 
                     let inner = '';
-                    if (isBlocked) inner = '擋';
+                    if (!officialExport && isBlocked) inner = '擋';
                     else if (student) inner = `<strong>${escape(student.name || '')}</strong>`;
 
                     const click = interactive ? ` onclick="onSeatClick(${r},${c})"` : '';
@@ -942,23 +980,14 @@
                 }
             }
 
-            const t1 = escape(teachers[0] || '');
-            const t2 = escape(teachers[1] || '');
-            const t3 = escape(teachers[2] || '');
-
-            return `<div class="school-form">
+            return `<div class="school-form${officialExport ? ' school-form-export' : ''}">
         <div class="school-form-title">${escape(title)}</div>
         <div class="school-form-grid" style="grid-template-columns:${colStyle}">${cells}</div>
-        <div class="school-form-front-bar"></div>
-        <div class="school-form-footer">
-            <div class="school-form-teachers">
-                <div>Class Teacher 1${t1 ? '：' + t1 : ''}</div>
-                <div>Class Teacher 2${t2 ? '：' + t2 : ''}</div>
-                <div>Class Teacher 3${t3 ? '：' + t3 : ''}</div>
-            </div>
+        <div class="school-form-desk-row">
             <div class="school-form-desk">教師桌</div>
         </div>
-    </div>${interactive ? '<p class="school-form-hint no-print">下方為課室前方（教師桌）。偶數欄會在中間留走道。</p>' : ''}`;
+        <div class="school-form-blackboard" aria-label="黑板"></div>
+    </div>${interactive ? '<p class="school-form-hint no-print">最下方橫條為黑板（課室前方）。6 欄官方表後排左一格留空，以對齊學校範本。</p>' : ''}`;
         }
 
         function renderClassroom() {
@@ -1993,7 +2022,91 @@
             showAlert('分析 CSV 已匯出（含狀態、是否前排、左鄰、右鄰；空位／阻擋亦列出以便對應課室）', 'success');
         }
 
-        /* ---------- Print A4 school form ---------- */
+        /* ---------- Landscape PDF / print ---------- */
+
+        function officialFormOptions() {
+            syncFormMetaFromInputs();
+            return {
+                className: classroom.className,
+                room: classroom.room,
+                rows: classroom.rows,
+                cols: classroom.cols,
+                seats: classroom.seats,
+                blockedSeats: classroom.blockedSeats,
+                selectedSeat: null,
+                interactive: false,
+                officialExport: true
+            };
+        }
+
+        function loadScriptOnce(src) {
+            return new Promise(function (resolve, reject) {
+                const already = Array.from(document.scripts).some(function (s) {
+                    return s.src && (s.src === src || s.src.indexOf(src.split('/').pop()) !== -1);
+                });
+                if (already) {
+                    resolve();
+                    return;
+                }
+                const el = document.createElement('script');
+                el.src = src;
+                el.onload = function () { resolve(); };
+                el.onerror = function () { reject(new Error('無法載入 ' + src)); };
+                document.head.appendChild(el);
+            });
+        }
+
+        function ensurePdfLibraries() {
+            const html2canvasSrc = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+            const jspdfSrc = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js';
+            return loadScriptOnce(html2canvasSrc).then(function () {
+                return loadScriptOnce(jspdfSrc);
+            });
+        }
+
+        function exportLandscapePdf() {
+            if (!classroom.seats.length) {
+                showAlert('請先建立課室', 'error');
+                return;
+            }
+            const host = document.getElementById('pdfExportHost');
+            if (!host) {
+                showAlert('找不到匯出畫布，改用列印', 'error');
+                printSeatingChart();
+                return;
+            }
+            host.innerHTML = buildSchoolFormHtml(officialFormOptions());
+            host.classList.add('is-capturing');
+            showAlert('正在產生 A4 橫向 PDF…', 'info');
+
+            ensurePdfLibraries().then(function () {
+                const html2canvasFn = window.html2canvas;
+                const jsPDFCtor = window.jspdf && window.jspdf.jsPDF;
+                if (!html2canvasFn || !jsPDFCtor) {
+                    throw new Error('PDF 元件未就緒');
+                }
+                return html2canvasFn(host, {
+                    scale: 2,
+                    backgroundColor: '#ffffff',
+                    useCORS: true,
+                    logging: false
+                }).then(function (canvas) {
+                    const pdf = new jsPDFCtor({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+                    const img = canvas.toDataURL('image/jpeg', 0.95);
+                    pdf.addImage(img, 'JPEG', 0, 0, 297, 210);
+                    const cls = (classroom.className || '座位表').replace(/[\\/:*?"<>|]/g, '');
+                    pdf.save(`${cls}班科座位表.pdf`);
+                    showAlert('已下載 A4 橫向 PDF（黑板在最下方）', 'success');
+                });
+            }).catch(function (err) {
+                console.error(err);
+                showAlert('PDF 下載失敗，改開列印視窗（請選 A4 橫向、另存 PDF）', 'error');
+                printSeatingChart();
+            }).finally(function () {
+                host.classList.remove('is-capturing');
+                host.innerHTML = '';
+            });
+        }
 
         function printSeatingChart() {
             if (!classroom.seats.length) {
@@ -2020,7 +2133,7 @@
             createClassroom();
             updateStatistics();
             updateConstraintsDisplay();
-            showAlert('歡迎使用：匯入名單 → 擋壞桌 → 設不可同坐 → 智能分配 → 列印學校 A4 座位表', 'success');
+            showAlert('歡迎使用：匯入名單 → 擋壞桌 → 設不可同坐 → 智能分配 → 匯出橫向 PDF', 'success');
         });
     </script>
 </body>
