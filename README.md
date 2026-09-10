@@ -2,7 +2,7 @@
 
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-線上可用-brightgreen)](https://donaldcpk.github.io/ultra-seat/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-v2.5.0-orange.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-v2.6.0-orange.svg)](CHANGELOG.md)
 
 > **立即使用（免安裝）**：[https://donaldcpk.github.io/ultra-seat/](https://donaldcpk.github.io/ultra-seat/)
 
@@ -36,7 +36,7 @@ CloudSAMS（前 WebSAMS）已有「編修座位表」、上傳相片、依班點
 - **前排／SEN**：CSV 填「是」時優先試前兩排（**不會**從姓名猜性別）
 - **課室模板**：名稱、行列、室、班主任欄、阻擋存於瀏覽器；模板不含學生名單
 - **上次座位記憶**：依班別存於本機（session + localStorage），僅座位座標
-- **A4 橫向 PDF**：嚴格跟學校範本——`班/科座位表(室)`、疏離座位框、後排左一格可空、右下教師桌、**最下方黑板橫條**；螢幕預覽與匯出同一份表格
+- **A4 橫向 PDF**：嚴格跟學校範本——`班/科座位表(室)`、疏離座位框、格內**姓名／學號／職位**、後排左一格可空、右下教師桌、**左方班主任**、最下方黑板橫條；螢幕預覽與匯出同一份表格
 
 ## 刻意不做
 
@@ -84,7 +84,7 @@ CloudSAMS（前 WebSAMS）已有「編修座位表」、上傳相片、依班點
 1. 畫面上已有姓名分配（中間已是正式表格預覽）
 2. 按「匯出橫向 PDF」→ 會下載 A4 橫向檔
 3. 若下載失敗，可用「列印（備用）」並選 **A4 橫向 → 另存 PDF**
-4. 應見：`班/科座位表(室)` 標題、疏離座位框、右下教師桌、**最下方黑板橫條**（沒有中間走道、沒有產品名稱）
+4. 應見：`班/科座位表(室)` 標題、格內姓名＋學號＋職位、右下教師桌、左方班主任、**最下方黑板橫條**
 
 ## 私隱
 
@@ -118,7 +118,7 @@ CHANGELOG.md            # 版本變更
 ## 版本
 
 - SemVer；變更見 [CHANGELOG.md](CHANGELOG.md)
-- 目前：**v2.5.0**（官方範本橫向 PDF，黑板在最下方）
+- 目前：**v2.6.0**（座位顯示學號／職位，班主任在教師桌左方）
 
 ## 授權
 
