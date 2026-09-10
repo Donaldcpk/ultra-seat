@@ -220,13 +220,23 @@
         .school-form .seat {
             width: auto;
             height: auto;
-            min-height: 48px;
+            min-height: 52px;
             border: 1.5px solid #111;
             border-radius: 3px;
             background: #fff;
             color: #111;
             font-size: 12px;
             font-weight: 600;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .school-form .seat .seat-meta {
+            display: block;
+            font-size: 10px;
+            font-weight: 500;
+            line-height: 1.2;
+            opacity: 0.92;
         }
 
         .school-form .seat.occupied {
@@ -252,8 +262,17 @@
 
         .school-form-desk-row {
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 16px;
             margin: 22px 0 12px;
+        }
+
+        .school-form-teachers {
+            text-align: left;
+            font-size: 12px;
+            line-height: 1.55;
+            min-width: 0;
         }
 
         .school-form-desk {
@@ -263,6 +282,7 @@
             white-space: nowrap;
             box-shadow: 2px 2px 0 #c4c4c4;
             background: #fff;
+            flex-shrink: 0;
         }
 
         .school-form-blackboard {
@@ -312,6 +332,9 @@
             font-size: 11pt;
             box-shadow: none;
         }
+
+        .pdf-export-host .school-form .seat .seat-meta { font-size: 8pt; }
+        .pdf-export-host .school-form-teachers { font-size: 10pt; }
 
         .pdf-export-host .school-form-blackboard { height: 8mm; }
 
@@ -578,6 +601,8 @@
             }
 
             .school-form-desk { font-size: 12pt; padding: 4mm 10mm; }
+            .school-form-teachers { font-size: 10pt; }
+            .school-form .seat .seat-meta { font-size: 8pt; }
             .school-form-blackboard { height: 6mm; }
             .pdf-export-host { display: none !important; }
         }
@@ -676,6 +701,8 @@
                     </div>
                     <button type="button" class="btn btn-secondary" onclick="createSampleData()">建立班內範例（36 人）</button>
                     <button type="button" class="btn btn-success" onclick="downloadSampleCSV()">下載範例 CSV</button>
+                    <button type="button" class="btn btn-warning" onclick="placeStudentsOnSeats()">把名單放到座位</button>
+                    <p class="hint">匯入 CSV 或建立範例後會自動把名字排上座位。若沒出現，按這顆再排一次。</p>
                     <div class="students-list" id="studentsList">
                         <div style="text-align:center;color:#999;padding:12px;font-size:12px;">尚未匯入學生資料</div>
                     </div>
@@ -705,7 +732,7 @@
                 <div class="section">
                     <h3>座位操作</h3>
                     <button type="button" class="btn" onclick="randomAssign()">隨機分配</button>
-                    <button type="button" class="btn btn-warning" onclick="smartAssign()">智能分配（含週更）</button>
+                    <button type="button" class="btn btn-warning" onclick="smartAssign()">把名單放到座位（智能／週更）</button>
                     <button type="button" class="btn btn-accent" onclick="exportLandscapePdf()">匯出橫向 PDF</button>
                     <button type="button" class="btn btn-secondary" onclick="printSeatingChart()">列印（備用）</button>
                     <button type="button" class="btn btn-danger" onclick="resetSeats()">重置座位</button>
@@ -932,6 +959,25 @@
             return Number(cols) === 6 && r === rows - 1 && c === 0;
         }
 
+        function formatSeatInnerHtml(student, escape) {
+            const name = escape(student.name || '');
+            const id = String(student.id || '').trim();
+            const pos = String(student.position || '').trim();
+            const meta = [id, pos].filter(Boolean).join(' · ');
+            let html = `<strong>${name}</strong>`;
+            if (meta) html += `<span class="seat-meta">${escape(meta)}</span>`;
+            return html;
+        }
+
+        function formatTeacherBlock(teachers, escape) {
+            const list = Array.isArray(teachers) ? teachers : ['', '', ''];
+            const lines = [0, 1, 2].map(function (i) {
+                const name = escape(String(list[i] || '').trim());
+                return `<div>Class Teacher ${i + 1}${name ? '：' + name : ''}</div>`;
+            });
+            return `<div class="school-form-teachers">${lines.join('')}</div>`;
+        }
+
         function buildSchoolFormHtml(opts) {
             const className = opts.className || '';
             const room = opts.room || '';
@@ -941,6 +987,7 @@
             const blocked = opts.blockedSeats instanceof Set
                 ? opts.blockedSeats
                 : new Set(opts.blockedSeats || []);
+            const teachers = opts.teachers || ['', '', ''];
             const selected = opts.selectedSeat || null;
             const interactive = !!opts.interactive;
             const officialExport = !!opts.officialExport;
@@ -973,7 +1020,7 @@
 
                     let inner = '';
                     if (!officialExport && isBlocked) inner = '擋';
-                    else if (student) inner = `<strong>${escape(student.name || '')}</strong>`;
+                    else if (student) inner = formatSeatInnerHtml(student, escape);
 
                     const click = interactive ? ` onclick="onSeatClick(${r},${c})"` : '';
                     cells += `<div class="${cls}" data-row="${r}" data-col="${c}"${click}>${inner}</div>`;
@@ -984,10 +1031,11 @@
         <div class="school-form-title">${escape(title)}</div>
         <div class="school-form-grid" style="grid-template-columns:${colStyle}">${cells}</div>
         <div class="school-form-desk-row">
+            ${formatTeacherBlock(teachers, escape)}
             <div class="school-form-desk">教師桌</div>
         </div>
         <div class="school-form-blackboard" aria-label="黑板"></div>
-    </div>${interactive ? '<p class="school-form-hint no-print">最下方橫條為黑板（課室前方）。6 欄官方表後排左一格留空，以對齊學校範本。</p>' : ''}`;
+    </div>${interactive ? '<p class="school-form-hint no-print">最下方橫條為黑板（課室前方）。座位顯示姓名、學號與職位；班主任在教師桌左方。</p>' : ''}`;
         }
 
         function renderClassroom() {
@@ -1222,7 +1270,8 @@
             updateStudentsList();
             updateStatistics();
             clearConstraintReport();
-            showAlert('已建立 36 人班內範例，並加入 3 組不可同坐（示範用）', 'success');
+            showAlert('已建立 36 人班內範例，並加入 3 組不可同坐；正在放到座位…', 'success');
+            placeStudentsOnSeats();
         }
 
         function importCSV() {
@@ -1360,7 +1409,10 @@
                 updateStudentsList();
                 updateStatistics();
                 clearConstraintReport();
-                showAlert(`成功匯入 ${newStudents.length} 位學生`, 'success');
+                const csvInput = document.getElementById('csvFile');
+                if (csvInput) csvInput.value = '';
+                showAlert(`成功匯入 ${newStudents.length} 位學生，正在放到座位…`, 'success');
+                placeStudentsOnSeats();
             } else {
                 showAlert('沒有匯入任何學生', 'error');
             }
@@ -1413,6 +1465,21 @@
             renderClassroom();
             updateStatistics();
             showAlert('已清除所有阻擋座位', 'info');
+        }
+
+        function placeStudentsOnSeats() {
+            if (!classroom.seats.length) createClassroom();
+            if (students.length === 0) {
+                showAlert('請先匯入 CSV 或按「建立班內範例」', 'error');
+                return;
+            }
+            const availableSeats = getAvailableSeats();
+            if (students.length > availableSeats.length) {
+                showAlert(`已有 ${students.length} 人，但只有 ${availableSeats.length} 個座位。請先加大行列或減少阻擋，再按「把名單放到座位」。`, 'warning');
+                renderClassroom();
+                return;
+            }
+            smartAssign();
         }
 
         function randomAssign() {
@@ -2033,6 +2100,7 @@
                 cols: classroom.cols,
                 seats: classroom.seats,
                 blockedSeats: classroom.blockedSeats,
+                teachers: classroom.teachers,
                 selectedSeat: null,
                 interactive: false,
                 officialExport: true
@@ -2133,7 +2201,7 @@
             createClassroom();
             updateStatistics();
             updateConstraintsDisplay();
-            showAlert('歡迎使用：匯入名單 → 擋壞桌 → 設不可同坐 → 智能分配 → 匯出橫向 PDF', 'success');
+            showAlert('歡迎使用：匯入名單（會自動排到座位）→ 可再按「把名單放到座位」重排 → 匯出橫向 PDF', 'success');
         });
     </script>
 </body>

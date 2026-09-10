@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-09-10
+
+### Added
+- 座位格顯示學號與職位（職務）；預覽與橫向 PDF 相同
+- 教師桌左方顯示 Class Teacher 1/2/3 班主任姓名
+- 匯入 CSV／建立範例後自動把名單排上座位；新增「把名單放到座位」按鈕
+
 ## [2.5.0] - 2026-09-09
 
 ### Added
@@ -73,7 +80,8 @@
 ### Added
 - 初版 CSV、隨機分配、Python GUI
 
-[Unreleased]: https://github.com/Donaldcpk/ultra-seat/compare/v2.5.0...HEAD
+[Unreleased]: https://github.com/Donaldcpk/ultra-seat/compare/v2.6.0...HEAD
+[2.6.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.2.0...v2.3.0
