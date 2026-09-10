@@ -701,6 +701,8 @@
                     </div>
                     <button type="button" class="btn btn-secondary" onclick="createSampleData()">建立班內範例（36 人）</button>
                     <button type="button" class="btn btn-success" onclick="downloadSampleCSV()">下載範例 CSV</button>
+                    <button type="button" class="btn btn-warning" onclick="placeStudentsOnSeats()">把名單放到座位</button>
+                    <p class="hint">匯入 CSV 或建立範例後會自動把名字排上座位。若沒出現，按這顆再排一次。</p>
                     <div class="students-list" id="studentsList">
                         <div style="text-align:center;color:#999;padding:12px;font-size:12px;">尚未匯入學生資料</div>
                     </div>
@@ -730,7 +732,7 @@
                 <div class="section">
                     <h3>座位操作</h3>
                     <button type="button" class="btn" onclick="randomAssign()">隨機分配</button>
-                    <button type="button" class="btn btn-warning" onclick="smartAssign()">智能分配（含週更）</button>
+                    <button type="button" class="btn btn-warning" onclick="smartAssign()">把名單放到座位（智能／週更）</button>
                     <button type="button" class="btn btn-accent" onclick="exportLandscapePdf()">匯出橫向 PDF</button>
                     <button type="button" class="btn btn-secondary" onclick="printSeatingChart()">列印（備用）</button>
                     <button type="button" class="btn btn-danger" onclick="resetSeats()">重置座位</button>
@@ -1268,7 +1270,8 @@
             updateStudentsList();
             updateStatistics();
             clearConstraintReport();
-            showAlert('已建立 36 人班內範例，並加入 3 組不可同坐（示範用）', 'success');
+            showAlert('已建立 36 人班內範例，並加入 3 組不可同坐；正在放到座位…', 'success');
+            placeStudentsOnSeats();
         }
 
         function importCSV() {
@@ -1406,7 +1409,10 @@
                 updateStudentsList();
                 updateStatistics();
                 clearConstraintReport();
-                showAlert(`成功匯入 ${newStudents.length} 位學生`, 'success');
+                const csvInput = document.getElementById('csvFile');
+                if (csvInput) csvInput.value = '';
+                showAlert(`成功匯入 ${newStudents.length} 位學生，正在放到座位…`, 'success');
+                placeStudentsOnSeats();
             } else {
                 showAlert('沒有匯入任何學生', 'error');
             }
@@ -1459,6 +1465,21 @@
             renderClassroom();
             updateStatistics();
             showAlert('已清除所有阻擋座位', 'info');
+        }
+
+        function placeStudentsOnSeats() {
+            if (!classroom.seats.length) createClassroom();
+            if (students.length === 0) {
+                showAlert('請先匯入 CSV 或按「建立班內範例」', 'error');
+                return;
+            }
+            const availableSeats = getAvailableSeats();
+            if (students.length > availableSeats.length) {
+                showAlert(`已有 ${students.length} 人，但只有 ${availableSeats.length} 個座位。請先加大行列或減少阻擋，再按「把名單放到座位」。`, 'warning');
+                renderClassroom();
+                return;
+            }
+            smartAssign();
         }
 
         function randomAssign() {
@@ -2180,7 +2201,7 @@
             createClassroom();
             updateStatistics();
             updateConstraintsDisplay();
-            showAlert('歡迎使用：匯入名單 → 擋壞桌 → 設不可同坐 → 智能分配 → 匯出橫向 PDF', 'success');
+            showAlert('歡迎使用：匯入名單（會自動排到座位）→ 可再按「把名單放到座位」重排 → 匯出橫向 PDF', 'success');
         });
     </script>
 </body>
