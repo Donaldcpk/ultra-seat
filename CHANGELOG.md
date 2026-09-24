@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-09-24
+
+### Fixed
+- 匯入「座位分析」CSV 時按座位行／列還原學生、阻擋與空位，不再重新打亂
+- `#N/A` 與空位不再被當成學生；`是否前排` 會保留
+- 座位格取消固定高度與裁切，畫面、列印、PDF 都顯示姓名、學號、職位
+- 取消 6 欄後排左格留空，每一格都對應 CSV
+
 ## [2.6.0] - 2026-09-10
 
 ### Added
@@ -80,7 +88,8 @@
 ### Added
 - 初版 CSV、隨機分配、Python GUI
 
-[Unreleased]: https://github.com/Donaldcpk/ultra-seat/compare/v2.6.0...HEAD
+[Unreleased]: https://github.com/Donaldcpk/ultra-seat/compare/v2.7.0...HEAD
+[2.7.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.3.0...v2.4.0

@@ -219,8 +219,10 @@
 
         .school-form .seat {
             width: auto;
-            height: auto;
-            min-height: 52px;
+            height: auto !important;
+            max-height: none !important;
+            min-height: 64px;
+            overflow: visible !important;
             border: 1.5px solid #111;
             border-radius: 3px;
             background: #fff;
@@ -231,12 +233,19 @@
             gap: 1px;
         }
 
+        .school-form .seat .seat-name,
         .school-form .seat .seat-meta {
             display: block;
+            max-width: 100%;
+            white-space: normal;
+            overflow: visible;
+            line-height: 1.2;
+        }
+
+        .school-form .seat .seat-meta {
             font-size: 10px;
             font-weight: 500;
-            line-height: 1.2;
-            opacity: 0.92;
+            min-height: 1.2em;
         }
 
         .school-form .seat.occupied {
@@ -328,7 +337,9 @@
         }
 
         .pdf-export-host .school-form .seat {
+            height: auto !important;
             min-height: 18mm;
+            overflow: visible !important;
             font-size: 11pt;
             box-shadow: none;
         }
@@ -590,7 +601,10 @@
             .school-form-grid { gap: 6mm 7mm; }
 
             .school-form .seat {
-                min-height: 16mm;
+                height: auto !important;
+                max-height: none !important;
+                min-height: 18mm;
+                overflow: visible !important;
                 font-size: 10pt;
                 box-shadow: none !important;
             }
@@ -695,14 +709,14 @@
                             <input type="file" id="csvFile" accept=".csv,text/csv" onchange="importCSV()">
                             <label for="csvFile" class="file-input-display">
                                 選擇 CSV 檔案<br>
-                                <small>班別,班號/學號,姓名[,職務][,前排/SEN]</small>
+                                <small>新名單，或本工具匯出的座位分析表</small>
                             </label>
                         </div>
                     </div>
                     <button type="button" class="btn btn-secondary" onclick="createSampleData()">建立班內範例（36 人）</button>
                     <button type="button" class="btn btn-success" onclick="downloadSampleCSV()">下載範例 CSV</button>
                     <button type="button" class="btn btn-warning" onclick="placeStudentsOnSeats()">把名單放到座位</button>
-                    <p class="hint">匯入 CSV 或建立範例後會自動把名字排上座位。若沒出現，按這顆再排一次。</p>
+                    <p class="hint">新名單會自動排位。若檔案是「座位分析」表（有座位行、座位列），會按原座標還原，不會重新打亂。沒上座再按「把名單放到座位」。</p>
                     <div class="students-list" id="studentsList">
                         <div style="text-align:center;color:#999;padding:12px;font-size:12px;">尚未匯入學生資料</div>
                     </div>
@@ -955,18 +969,11 @@
             return `repeat(${Number(cols)}, 1fr)`;
         }
 
-        function isOfficialBackLeftGap(rows, cols, r, c) {
-            return Number(cols) === 6 && r === rows - 1 && c === 0;
-        }
-
         function formatSeatInnerHtml(student, escape) {
             const name = escape(student.name || '');
-            const id = String(student.id || '').trim();
-            const pos = String(student.position || '').trim();
-            const meta = [id, pos].filter(Boolean).join(' · ');
-            let html = `<strong>${name}</strong>`;
-            if (meta) html += `<span class="seat-meta">${escape(meta)}</span>`;
-            return html;
+            const id = escape(String(student.id || '').trim());
+            const pos = escape(String(student.position || '').trim());
+            return `<strong class="seat-name">${name}</strong><span class="seat-meta seat-id">${id}</span><span class="seat-meta seat-pos">${pos}</span>`;
         }
 
         function formatTeacherBlock(teachers, escape) {
@@ -1002,15 +1009,9 @@
                     const key = `${r}-${c}`;
                     const student = seats[r] && seats[r][c] ? seats[r][c] : null;
                     const isBlocked = blocked.has(key);
-                    if (isOfficialBackLeftGap(rows, cols, r, c) && !student) {
-                        cells += '<div class="school-seat-spacer" aria-hidden="true"></div>';
-                        continue;
-                    }
                     const isSelected = !officialExport && selected && selected[0] === r && selected[1] === c;
                     let cls = 'seat';
-                    if (officialExport) {
-                        if (student) cls += ' occupied';
-                    } else if (isBlocked) {
+                    if (isBlocked) {
                         cls += ' blocked';
                     } else if (student) {
                         cls += ' occupied';
@@ -1019,7 +1020,7 @@
                     if (isSelected) cls += ' selected';
 
                     let inner = '';
-                    if (!officialExport && isBlocked) inner = '擋';
+                    if (isBlocked) inner = '擋';
                     else if (student) inner = formatSeatInnerHtml(student, escape);
 
                     const click = interactive ? ` onclick="onSeatClick(${r},${c})"` : '';
@@ -1320,7 +1321,7 @@
                     if (map.name < 0) map.name = i;
                 } else if (['職務', '職位', 'position', 'role', 'title'].includes(n) || h.trim() === '職務') {
                     if (map.position < 0) map.position = i;
-                } else if (['前排', 'sen', '特殊', 'front', 'needsfront', '優先前排'].includes(n) || h.trim() === '前排' || h.trim() === 'SEN') {
+                } else if (['前排', '是否前排', 'sen', '特殊', 'front', 'needsfront', '優先前排'].includes(n) || h.trim() === '前排' || h.trim() === '是否前排' || h.trim() === 'SEN') {
                     if (map.front < 0) map.front = i;
                 }
             });
@@ -1331,7 +1332,7 @@
                 if (raw === '學號' || raw === '班號') map.id = map.id < 0 ? i : map.id;
                 if (raw === '姓名') map.name = map.name < 0 ? i : map.name;
                 if (raw === '職務') map.position = map.position < 0 ? i : map.position;
-                if (raw === '前排' || raw === 'SEN') map.front = map.front < 0 ? i : map.front;
+                if (raw === '前排' || raw === '是否前排' || raw === 'SEN') map.front = map.front < 0 ? i : map.front;
             });
             return map;
         }
@@ -1339,6 +1340,112 @@
         function isTruthyFlag(v) {
             const s = String(v || '').trim().toLowerCase();
             return ['1', 'y', 'yes', 'true', '是', '要', 'sen', '前排', '✓', 'v'].includes(s);
+        }
+
+        function headerLooksLikeAnalysis(headers) {
+            const raw = headers.map(h => String(h || '').replace(/^\uFEFF/, '').trim());
+            return raw.includes('座位行') && raw.includes('座位列') && raw.includes('狀態');
+        }
+
+        function isPlaceholderName(name) {
+            const s = String(name || '').trim();
+            return !s || s === '#N/A' || s === '#n/a' || s === 'N/A';
+        }
+
+        function parseAnalysisPlacement(csv) {
+            const lines = String(csv || '').split(/\r?\n/).filter(l => l.trim() !== '');
+            if (!lines.length) return null;
+            const headers = parseCSVLine(lines[0]).map(h => String(h || '').replace(/^\uFEFF/, '').trim());
+            if (!headerLooksLikeAnalysis(headers)) return null;
+            const idx = {};
+            headers.forEach((h, i) => { idx[h] = i; });
+            const col = function (parts, name) {
+                const i = idx[name];
+                return i == null ? '' : String(parts[i] || '').trim();
+            };
+            let maxRow = 0;
+            let maxCol = 0;
+            const blocked = [];
+            const students = [];
+            const errors = [];
+            const seen = new Set();
+            let className = '';
+            for (let i = 1; i < lines.length; i++) {
+                const parts = parseCSVLine(lines[i]);
+                if (parts.every(p => !String(p || '').trim())) continue;
+                const rowNum = parseInt(col(parts, '座位行'), 10);
+                const colNum = parseInt(col(parts, '座位列'), 10);
+                const status = col(parts, '狀態');
+                if (!rowNum || !colNum) {
+                    errors.push(`第 ${i + 1} 行缺少座位座標`);
+                    continue;
+                }
+                maxRow = Math.max(maxRow, rowNum);
+                maxCol = Math.max(maxCol, colNum);
+                const r = rowNum - 1;
+                const c = colNum - 1;
+                if (status === '阻擋') {
+                    blocked.push(`${r}-${c}`);
+                    continue;
+                }
+                if (status === '空位' || status === '') continue;
+                const id = col(parts, '學號') || col(parts, '班號');
+                const name = col(parts, '姓名');
+                if (status !== '已分配' || isPlaceholderName(name) || !id) {
+                    if (status === '已分配') errors.push(`第 ${i + 1} 行已分配但缺少學號或姓名`);
+                    continue;
+                }
+                if (seen.has(id)) {
+                    errors.push(`學號／班號 ${id} 重複`);
+                    continue;
+                }
+                seen.add(id);
+                const group = col(parts, '班別');
+                if (!className && group) className = group;
+                const frontRaw = col(parts, '是否前排') || col(parts, '前排');
+                students.push({
+                    id,
+                    name,
+                    position: col(parts, '職務'),
+                    classGroup: group,
+                    needsFront: ['是', '1', 'sen', 'SEN', 'y', 'yes', 'true'].includes(frontRaw),
+                    row: r,
+                    col: c
+                });
+            }
+            return {
+                rows: Math.min(12, Math.max(2, maxRow)),
+                cols: Math.min(12, Math.max(2, maxCol)),
+                className,
+                blocked,
+                students,
+                errors
+            };
+        }
+
+        function applyAnalysisPlacement(placement) {
+            document.getElementById('rows').value = placement.rows;
+            document.getElementById('cols').value = placement.cols;
+            if (placement.className) document.getElementById('className').value = placement.className;
+            createClassroom();
+            classroom.blockedSeats = new Set(placement.blocked || []);
+            students = (placement.students || []).map(function (s) {
+                const student = new Student(s.id, s.name, s.position, s.classGroup, s.needsFront);
+                if (s.row >= 0 && s.col >= 0 && s.row < classroom.rows && s.col < classroom.cols) {
+                    classroom.seats[s.row][s.col] = student;
+                    student.assignSeat(s.row, s.col);
+                }
+                return student;
+            });
+            constraints = [];
+            clearStoredPlanForClass(classroom.className);
+            selectedSeat = null;
+            updateConstraintsDisplay();
+            updateStudentsList();
+            updateStatistics();
+            clearConstraintReport();
+            renderClassroom();
+            saveLastPlan(captureCurrentPlan());
         }
 
         function parseCSV(csv) {
@@ -1349,6 +1456,21 @@
             }
 
             const firstParts = parseCSVLine(lines[0]);
+            if (headerLooksLikeAnalysis(firstParts)) {
+                const placement = parseAnalysisPlacement(csv);
+                if (!placement || placement.students.length === 0) {
+                    showAlert('分析表裡沒有可還原的學生', 'error');
+                    return;
+                }
+                applyAnalysisPlacement(placement);
+                const csvInput = document.getElementById('csvFile');
+                if (csvInput) csvInput.value = '';
+                const warn = placement.errors.length
+                    ? `（略過 ${placement.errors.length} 列）`
+                    : '';
+                showAlert(`已按原座位還原 ${placement.students.length} 人、${placement.blocked.length} 個阻擋${warn}`, 'success');
+                return;
+            }
             const headerMap = mapHeaderIndex(firstParts);
             const hasHeader = headerMap.name >= 0 || headerMap.id >= 0 ||
                 firstParts.some(p => ['學號', '班號', '姓名', '班別', '組別', '職務'].includes(p.trim()));

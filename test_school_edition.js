@@ -261,18 +261,11 @@ function schoolFormGridColumns(cols) {
     return `repeat(${Number(cols)}, 1fr)`;
 }
 
-function isOfficialBackLeftGap(rows, cols, r, c) {
-    return Number(cols) === 6 && r === rows - 1 && c === 0;
-}
-
 function formatSeatInnerHtml(student, escape) {
     const name = escape(student.name || '');
-    const id = String(student.id || '').trim();
-    const pos = String(student.position || '').trim();
-    const meta = [id, pos].filter(Boolean).join(' · ');
-    let html = `<strong>${name}</strong>`;
-    if (meta) html += `<span class="seat-meta">${escape(meta)}</span>`;
-    return html;
+    const id = escape(String(student.id || '').trim());
+    const pos = escape(String(student.position || '').trim());
+    return `<strong class="seat-name">${name}</strong><span class="seat-meta seat-id">${id}</span><span class="seat-meta seat-pos">${pos}</span>`;
 }
 
 function formatTeacherBlock(teachers, escape) {
@@ -307,15 +300,9 @@ function buildSchoolFormHtml(opts) {
             const key = `${r}-${c}`;
             const student = seats[r] && seats[r][c] ? seats[r][c] : null;
             const isBlocked = blocked.has(key);
-            if (isOfficialBackLeftGap(rows, cols, r, c) && !student) {
-                cells += '<div class="school-seat-spacer" aria-hidden="true"></div>';
-                continue;
-            }
             const isSelected = !officialExport && selected && selected[0] === r && selected[1] === c;
             let cls = 'seat';
-            if (officialExport) {
-                if (student) cls += ' occupied';
-            } else if (isBlocked) {
+            if (isBlocked) {
                 cls += ' blocked';
             } else if (student) {
                 cls += ' occupied';
@@ -324,7 +311,7 @@ function buildSchoolFormHtml(opts) {
             if (isSelected) cls += ' selected';
 
             let inner = '';
-            if (!officialExport && isBlocked) inner = '擋';
+            if (isBlocked) inner = '擋';
             else if (student) inner = formatSeatInnerHtml(student, escapeHtml);
 
             const click = interactive ? ` onclick="onSeatClick(${r},${c})"` : '';
@@ -512,12 +499,15 @@ passed++;
     assert(html.includes('Class Teacher 2：鄭百喬'), 'teacher 2 left of desk');
     assert(html.includes('Class Teacher 3'), 'teacher 3 slot');
     assert(html.includes('陳志明'), 'student name visible');
-    assert(html.includes('01 · 班長'), 'id and position visible');
-    assert(html.includes('02 · 副班長'), 'second id and position');
+    assert(html.includes('>01<'), 'id visible');
+    assert(html.includes('>班長<'), 'position visible');
+    assert(html.includes('>02<'), 'second id');
+    assert(html.includes('>副班長<'), 'second position');
     assert(!html.includes('print-only'), 'not print-only wrapper');
     assert(!html.includes('終極課室座位表'), 'no product brand on form');
     assert(!html.includes('school-aisle'), 'no center aisle');
-    assert(html.includes('school-seat-spacer'), '6-col back-left gap');
+    assert(!html.includes('school-seat-spacer'), 'no hidden back-left cell');
+    assert((html.match(/data-row=/g) || []).length === 36, 'every cell is drawn');
     const titleIdx = html.indexOf('1B班/科座位表');
     const nameIdx = html.indexOf('陳志明');
     const teacherIdx = html.indexOf('Class Teacher 1：王詠珊');
@@ -532,10 +522,123 @@ passed++;
         className: '1B', room: '102', rows: 6, cols: 6, seats,
         blockedSeats: new Set(['5-5']), teachers: ['王詠珊', '', ''], officialExport: true
     });
-    assert(!exportHtml.includes('擋'), 'export hides block mark');
+    assert(exportHtml.includes('擋'), 'export shows blocked cell');
     assert(exportHtml.includes('school-form-export'), 'export class');
-    assert(exportHtml.includes('01 · 班長'), 'export keeps id and position');
+    assert(exportHtml.includes('>01<') && exportHtml.includes('>班長<'), 'export keeps id and position');
     assert(exportHtml.includes('Class Teacher 1：王詠珊'), 'export keeps teacher names');
+    passed++;
+}
+
+function parseCSVLine(line) {
+    const result = [];
+    let cur = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+            if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; }
+            else inQuotes = !inQuotes;
+        } else if (ch === ',' && !inQuotes) {
+            result.push(cur.trim());
+            cur = '';
+        } else cur += ch;
+    }
+    result.push(cur.trim());
+    return result;
+}
+
+function headerLooksLikeAnalysis(headers) {
+    const raw = headers.map(h => String(h || '').replace(/^\uFEFF/, '').trim());
+    return raw.includes('座位行') && raw.includes('座位列') && raw.includes('狀態');
+}
+
+function isPlaceholderName(name) {
+    const s = String(name || '').trim();
+    return !s || s === '#N/A' || s === '#n/a' || s === 'N/A';
+}
+
+function parseAnalysisPlacement(csv) {
+    const lines = String(csv || '').split(/\r?\n/).filter(l => l.trim() !== '');
+    if (!lines.length) return null;
+    const headers = parseCSVLine(lines[0]).map(h => String(h || '').replace(/^\uFEFF/, '').trim());
+    if (!headerLooksLikeAnalysis(headers)) return null;
+    const idx = {};
+    headers.forEach((h, i) => { idx[h] = i; });
+    const col = function (parts, name) {
+        const i = idx[name];
+        return i == null ? '' : String(parts[i] || '').trim();
+    };
+    let maxRow = 0;
+    let maxCol = 0;
+    const blocked = [];
+    const students = [];
+    const errors = [];
+    const seen = new Set();
+    let className = '';
+    for (let i = 1; i < lines.length; i++) {
+        const parts = parseCSVLine(lines[i]);
+        if (parts.every(p => !String(p || '').trim())) continue;
+        const rowNum = parseInt(col(parts, '座位行'), 10);
+        const colNum = parseInt(col(parts, '座位列'), 10);
+        const status = col(parts, '狀態');
+        if (!rowNum || !colNum) continue;
+        maxRow = Math.max(maxRow, rowNum);
+        maxCol = Math.max(maxCol, colNum);
+        const r = rowNum - 1;
+        const c = colNum - 1;
+        if (status === '阻擋') { blocked.push(`${r}-${c}`); continue; }
+        if (status === '空位' || status === '') continue;
+        const id = col(parts, '學號') || col(parts, '班號');
+        const name = col(parts, '姓名');
+        if (status !== '已分配' || isPlaceholderName(name) || !id) {
+            if (status === '已分配') errors.push('bad');
+            continue;
+        }
+        if (seen.has(id)) { errors.push('dup'); continue; }
+        seen.add(id);
+        const group = col(parts, '班別');
+        if (!className && group) className = group;
+        const frontRaw = col(parts, '是否前排') || col(parts, '前排');
+        students.push({
+            id, name, position: col(parts, '職務'), classGroup: group,
+            needsFront: ['是', '1', 'sen', 'SEN'].includes(frontRaw),
+            row: r, col: c
+        });
+    }
+    return { rows: Math.max(2, maxRow), cols: Math.max(2, maxCol), className, blocked, students, errors };
+}
+
+// 11) 分析 CSV 按原座標還原，#N/A 不當學生，空位仍算一格
+{
+    const csv = [
+        '座位行,座位列,狀態,班別,學號,姓名,職務,是否前排,左鄰,右鄰',
+        '1,1,已分配,1B,13,李瑋昊,主席,否,,温卓棊',
+        '4,1,阻擋,,,,#N/A,,,陳梓鋭',
+        '5,1,空位,,,,,,,',
+        '5,2,阻擋,,,,,,,',
+        '5,5,已分配,1B,6,何喆,中文科長,是,,廖佳鑫',
+        '5,6,已分配,1B,16,廖佳鑫,健康大使,否,何喆,'
+    ].join('\n');
+    const placement = parseAnalysisPlacement(csv);
+    assert(placement.className === '1B', 'class from analysis');
+    assert(placement.rows === 5 && placement.cols === 6, 'grid from coordinates');
+    assert(placement.students.length === 3, 'three real students');
+    assert(!placement.students.some(s => s.name === '#N/A'), 'hash NA is not a student');
+    const lee = placement.students.find(s => s.name === '李瑋昊');
+    assert(lee && lee.row === 0 && lee.col === 0 && lee.id === '13' && lee.position === '主席', 'front-left restored');
+    const ho = placement.students.find(s => s.id === '6');
+    assert(ho && ho.row === 4 && ho.col === 4 && ho.needsFront && ho.position === '中文科長', 'back seat and front flag');
+    assert(placement.blocked.includes('3-0') && placement.blocked.includes('4-1'), 'blocked cells');
+    const seats = Array.from({ length: 5 }, () => Array(6).fill(null));
+    placement.students.forEach(s => { seats[s.row][s.col] = s; });
+    const html = buildSchoolFormHtml({
+        className: '1B', room: '', rows: 5, cols: 6, seats,
+        blockedSeats: new Set(placement.blocked), officialExport: true
+    });
+    assert(html.includes('李瑋昊') && html.includes('>13<') && html.includes('>主席<'), 'pdf shows id and post');
+    assert(html.includes('何喆') && html.includes('廖佳鑫'), 'back row names');
+    assert((html.match(/data-row=/g) || []).length === 30, 'empty cells still drawn');
+    assert((html.match(/>擋</g) || []).length === 2, 'two blocked marks');
     passed++;
 }
 
