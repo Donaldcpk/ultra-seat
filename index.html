@@ -838,6 +838,7 @@
         const MAX_COLS = 12;
         const TEMPLATE_KEY = 'ultraSeat_templates_v1';
         const CLASS_SNAP_KEY = 'ultraSeat_classSnap_v1';
+        const CLASS_SNAP_LAST_KEY = 'ultraSeat_classSnapLast_v1';
         const LAST_PLAN_KEY = 'ultraSeat_lastPlan_v1';
         const SOLVER_NODE_LIMIT = 250000;
         const SOLVER_TIME_MS = 8000;
@@ -1288,15 +1289,33 @@
             }
         }
 
+        function latestSnapName(all) {
+            let last = '';
+            try { last = localStorage.getItem(CLASS_SNAP_LAST_KEY) || ''; } catch (e) { last = ''; }
+            if (last && all[last]) return last;
+            let best = '';
+            let bestAt = '';
+            Object.keys(all).forEach(function (k) {
+                const at = (all[k] && all[k].savedAt) || '';
+                if (at >= bestAt) { bestAt = at; best = k; }
+            });
+            return best;
+        }
+
         function refreshSnapHint() {
             const el = document.getElementById('classSnapHint');
             if (!el) return;
+            const all = loadClassSnaps();
             const name = (document.getElementById('className').value || '').trim() || classroom.className || '未命名';
-            const snap = loadClassSnaps()[name];
+            const snap = all[name];
+            const latest = latestSnapName(all);
             if (snap && snap.savedAt) {
                 const when = String(snap.savedAt).slice(0, 16).replace('T', ' ');
                 const n = (snap.students || []).length;
                 el.textContent = `這部電腦已記住「${name}」（${n} 人，${when}）。可按「載入上次」。`;
+            } else if (latest && all[latest]) {
+                const n = (all[latest].students || []).length;
+                el.textContent = `這部電腦記住了「${latest}」（${n} 人）。按「載入上次」即可載回。`;
             } else {
                 el.textContent = '名單和座位只留在這部電腦，不上傳。';
             }
@@ -1327,13 +1346,16 @@
                 savedAt: new Date().toISOString()
             };
             localStorage.setItem(CLASS_SNAP_KEY, JSON.stringify(all));
+            try { localStorage.setItem(CLASS_SNAP_LAST_KEY, key); } catch (e) { /* ignore */ }
             refreshSnapHint();
             showAlert(`已記住「${key}」在這部電腦`, 'success');
         }
 
         function loadThisClass() {
-            const name = (document.getElementById('className').value || '').trim() || classroom.className || '未命名';
-            const t = loadClassSnaps()[name];
+            const all = loadClassSnaps();
+            const typed = (document.getElementById('className').value || '').trim() || classroom.className || '未命名';
+            let name = all[typed] ? typed : latestSnapName(all);
+            const t = name ? all[name] : null;
             if (!t) {
                 showAlert('這部電腦還沒有記住這一班', 'error');
                 return;
