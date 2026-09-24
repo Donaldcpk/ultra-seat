@@ -54,8 +54,26 @@
             text-align: center;
         }
 
-        .header h1 { font-size: 1.65em; margin-bottom: 4px; letter-spacing: 0.02em; }
-        .header p { font-size: 0.95em; opacity: 0.92; }
+        .header h1 { font-size: 1.45em; margin-bottom: 8px; letter-spacing: 0.02em; }
+        .steps {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .step {
+            background: rgba(255,255,255,0.16);
+            border-radius: 999px;
+            padding: 4px 12px;
+            font-size: 13px;
+        }
+        .step.done { background: #ecfdf5; color: #065f46; }
+        #blockToggle.is-on { background: #334155; }
+        .btn-export { font-size: 15px; padding: 12px; }
+        .page-alerts {
+            padding: 8px 16px 0;
+        }
+        .page-alerts:empty { display: none; }
 
         .main-content {
             display: flex;
@@ -625,20 +643,21 @@
 <body>
     <div class="container">
         <div class="header no-print">
-            <h1>終極課室座位表</h1>
-            <p>港校班主任的排位＋課室管理：不可同坐、擋壞桌、前排／SEN、A4 橫向 PDF、本機模板</p>
+            <h1>做好這一班的座位表</h1>
+            <div class="steps" id="stepBar">
+                <span class="step" id="stepImport">1. 匯入名單</span>
+                <span class="step" id="stepAdjust">2. 調座位</span>
+                <span class="step" id="stepExport">3. 匯出貼課室</span>
+            </div>
         </div>
+        <div id="alertContainer" class="page-alerts no-print"></div>
 
         <div class="main-content">
             <div class="left-panel no-print">
                 <div class="section">
-                    <h3>課室設定</h3>
+                    <h3>1. 這一班</h3>
                     <div class="form-group">
-                        <label>學校名稱（列印用）</label>
-                        <input type="text" id="schoolName" placeholder="例：某某中學" value="">
-                    </div>
-                    <div class="form-group">
-                        <label>班別名稱</label>
+                        <label>班別</label>
                         <input type="text" id="className" placeholder="例：1B 或 中三甲" value="中三甲">
                     </div>
                     <div class="form-group">
@@ -646,7 +665,50 @@
                         <input type="text" id="roomName" placeholder="例：102" value="">
                     </div>
                     <div class="form-group">
-                        <label>日期（列印用）</label>
+                        <label>班主任 1</label>
+                        <input type="text" id="classTeacher1" placeholder="選填" value="">
+                    </div>
+                    <div class="form-group">
+                        <label>班主任 2</label>
+                        <input type="text" id="classTeacher2" placeholder="選填" value="">
+                    </div>
+                    <div class="form-group">
+                        <label>班主任 3</label>
+                        <input type="text" id="classTeacher3" placeholder="選填" value="">
+                    </div>
+                    <div class="form-group">
+                        <label>匯入名單</label>
+                        <div class="file-input-wrapper">
+                            <input type="file" id="csvFile" accept=".csv,text/csv" onchange="importCSV()">
+                            <label for="csvFile" class="file-input-display">
+                                選擇 CSV<br>
+                                <small>新名單會自動排位；座位分析表會回到原位</small>
+                            </label>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-warning" onclick="placeStudentsOnSeats()">再排一次座位</button>
+                    <div class="template-row">
+                        <button type="button" class="btn btn-accent btn-small" onclick="saveThisClass()">記住這一班</button>
+                        <button type="button" class="btn btn-secondary btn-small" onclick="loadThisClass()">載入上次</button>
+                    </div>
+                    <p class="hint" id="classSnapHint">名單和座位只留在這部電腦，不上傳。</p>
+                </div>
+
+                <div class="section">
+                    <h3>2. 調座位</h3>
+                    <button type="button" class="btn" id="blockToggle" onclick="toggleBlockMode()">擋壞桌：關</button>
+                    <div id="modeHelp" class="alert alert-info">點一個座位，再點另一格即可對調。</div>
+                    <p class="hint" id="seatHint">先在左邊匯入名單。</p>
+                </div>
+
+                <details class="section" id="moreOptions">
+                    <summary style="cursor:pointer;font-weight:700;color:#475569;font-size:13px;">更多</summary>
+                    <div class="form-group" style="margin-top:8px;">
+                        <label>學校名稱（不會印在正式表上）</label>
+                        <input type="text" id="schoolName" placeholder="選填" value="">
+                    </div>
+                    <div class="form-group">
+                        <label>日期（不會印在正式表上）</label>
                         <input type="date" id="chartDate">
                     </div>
                     <div class="form-row">
@@ -659,112 +721,77 @@
                             <input type="number" id="cols" min="2" max="12" value="6">
                         </div>
                     </div>
+                    <button type="button" class="btn" onclick="createClassroom()">套用行列</button>
+                    <h3 style="margin-top:12px;">課室形狀</h3>
+                    <p class="hint">只記行列、室、壞桌，不含學生。</p>
                     <div class="form-group">
-                        <label>Class Teacher 1（選填）</label>
-                        <input type="text" id="classTeacher1" placeholder="班主任 1" value="">
+                        <label>形狀名稱</label>
+                        <input type="text" id="templateName" placeholder="例：102室 五行六列">
                     </div>
-                    <div class="form-group">
-                        <label>Class Teacher 2（選填）</label>
-                        <input type="text" id="classTeacher2" placeholder="班主任 2" value="">
-                    </div>
-                    <div class="form-group">
-                        <label>Class Teacher 3（選填）</label>
-                        <input type="text" id="classTeacher3" placeholder="班主任 3" value="">
-                    </div>
-                    <button type="button" class="btn" onclick="createClassroom()">建立／套用課室</button>
-                    <p class="hint">一般中學課室約 5–7 行 × 6–8 列即可；格數較大時畫面會自動縮小。</p>
-                </div>
-
-                <div class="section">
-                    <h3>課室模板（本機）</h3>
-                    <div class="form-group">
-                        <label>模板名稱</label>
-                        <input type="text" id="templateName" placeholder="例：室 301 六行七列">
-                    </div>
-                    <button type="button" class="btn btn-accent" onclick="saveTemplate()">儲存目前布局</button>
+                    <button type="button" class="btn btn-accent" onclick="saveTemplate()">儲存課室形狀</button>
                     <div class="template-row">
                         <select id="templateSelect">
-                            <option value="">選擇已存模板</option>
+                            <option value="">選擇已存形狀</option>
                         </select>
                         <button type="button" class="btn btn-secondary btn-small" onclick="loadSelectedTemplate()">載入</button>
                         <button type="button" class="btn btn-danger btn-small" onclick="deleteSelectedTemplate()">刪</button>
                     </div>
-                    <p class="hint">只存名稱、行列、室、班主任欄、阻擋座位；學生名單只留在本機瀏覽器，不上傳。</p>
-                </div>
-
-                <div class="section">
-                    <h3>操作模式</h3>
-                    <div class="mode-selector">
-                        <button type="button" class="mode-btn active" onclick="setMode('assign')" id="assignMode">分配</button>
-                        <button type="button" class="mode-btn" onclick="setMode('block')" id="blockMode">阻擋</button>
-                    </div>
-                    <div id="modeHelp" class="alert alert-info">點擊座位進行分配或交換</div>
-                </div>
-
-                <div class="section">
-                    <h3>學生管理</h3>
-                    <div class="form-group">
-                        <label>匯入 CSV</label>
-                        <div class="file-input-wrapper">
-                            <input type="file" id="csvFile" accept=".csv,text/csv" onchange="importCSV()">
-                            <label for="csvFile" class="file-input-display">
-                                選擇 CSV 檔案<br>
-                                <small>新名單，或本工具匯出的座位分析表</small>
-                            </label>
-                        </div>
-                    </div>
                     <button type="button" class="btn btn-secondary" onclick="createSampleData()">建立班內範例（36 人）</button>
                     <button type="button" class="btn btn-success" onclick="downloadSampleCSV()">下載範例 CSV</button>
-                    <button type="button" class="btn btn-warning" onclick="placeStudentsOnSeats()">把名單放到座位</button>
-                    <p class="hint">新名單會自動排位。若檔案是「座位分析」表（有座位行、座位列），會按原座標還原，不會重新打亂。沒上座再按「把名單放到座位」。</p>
-                    <div class="students-list" id="studentsList">
-                        <div style="text-align:center;color:#999;padding:12px;font-size:12px;">尚未匯入學生資料</div>
-                    </div>
-                </div>
-
-                <details class="section" id="advancedOptions">
-                    <summary style="cursor:pointer;font-weight:700;color:#475569;font-size:13px;">進階選項（少用）</summary>
-                    <p class="hint" style="margin-top:8px;">以下非班主任日常流程；考務／特殊編排才勾選。</p>
+                    <button type="button" class="btn" onclick="randomAssign()">隨機分配（不遵守限制）</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmResetSeats()">重置座位</button>
+                    <button type="button" class="btn btn-secondary" onclick="confirmClearBlocked()">清除阻擋</button>
+                    <button type="button" class="btn btn-secondary" onclick="printSeatingChart()">列印（備用）</button>
+                    <button type="button" class="btn btn-success" onclick="exportSeatingChart()">匯出分析 CSV</button>
                     <label class="checkbox-row">
                         <input type="checkbox" id="checkerboardOpt">
-                        <span>梅花座（上下左右不可同時有人；阻擋格不算有人）</span>
+                        <span>梅花座（少用）</span>
                     </label>
                     <label class="checkbox-row">
                         <input type="checkbox" id="disperseGroupOpt">
-                        <span>同班別／組別正交分散（CSV 需有班別或組別）</span>
+                        <span>同組分散（少用）</span>
                     </label>
+                    <h3 style="margin-top:12px;">統計</h3>
+                    <div class="statistics">
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalStudents">0</div>
+                            <div class="stat-label">總學生數</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="assignedStudents">0</div>
+                            <div class="stat-label">已分配</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="blockedSeats">0</div>
+                            <div class="stat-label">阻擋座位</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="assignmentRate">0%</div>
+                            <div class="stat-label">分配率</div>
+                        </div>
+                    </div>
+                    <div class="students-list" id="studentsList" style="margin-top:8px;">
+                        <div style="text-align:center;color:#999;padding:12px;font-size:12px;">尚未匯入學生資料</div>
+                    </div>
                 </details>
             </div>
 
             <div class="center-panel">
                 <div class="classroom-container screen-grid" id="schoolFormHost">
-                    <div style="color:#999;padding:40px;text-align:center;">請先建立教室布局</div>
+                    <div style="color:#999;padding:40px;text-align:center;">先在左邊匯入名單</div>
                 </div>
             </div>
 
             <div class="right-panel no-print">
                 <div class="section">
-                    <h3>座位操作</h3>
-                    <button type="button" class="btn" onclick="randomAssign()">隨機分配</button>
-                    <button type="button" class="btn btn-warning" onclick="smartAssign()">把名單放到座位（智能／週更）</button>
-                    <button type="button" class="btn btn-accent" onclick="exportLandscapePdf()">匯出橫向 PDF</button>
-                    <button type="button" class="btn btn-secondary" onclick="printSeatingChart()">列印（備用）</button>
-                    <button type="button" class="btn btn-danger" onclick="resetSeats()">重置座位</button>
-                    <button type="button" class="btn btn-secondary" onclick="clearBlocked()">清除阻擋</button>
-                    <button type="button" class="btn btn-success" onclick="exportSeatingChart()">匯出分析 CSV</button>
-                    <p class="hint">匯出為 A4 橫向 PDF，版面嚴格跟學校範本：黑板在最下方。分析 CSV 另供 Excel 用。</p>
+                    <h3>3. 匯出</h3>
+                    <button type="button" class="btn btn-accent btn-export" onclick="exportLandscapePdf()">匯出橫向 PDF</button>
+                    <p class="hint">A4 橫向，黑板在最下方。姓名、學號、職位都會印上。</p>
                 </div>
 
                 <div class="section">
-                    <h3>分配檢查報告</h3>
-                    <div id="constraintReport" style="font-size:12px;color:#64748b;">
-                        尚未分配。智能分配後會顯示「不可同坐」是否遵守，以及前排／SEN 是否坐在前兩排。
-                    </div>
-                </div>
-
-                <div class="section">
-                    <h3>不可同坐（配對限制）</h3>
-                    <p class="hint">指定兩位學生不可相鄰——這是相對「只編修座位圖」的主要差別。</p>
+                    <h3>誰不能坐一起</h3>
+                    <p class="hint">指定兩位學生不可相鄰，然後再排一次座位。</p>
                     <div class="form-group">
                         <label>選擇學生</label>
                         <select id="constraintStudent" onchange="updateConstraintOptions()">
@@ -796,28 +823,11 @@
                 </div>
 
                 <div class="section">
-                    <h3>統計</h3>
-                    <div class="statistics">
-                        <div class="stat-card">
-                            <div class="stat-number" id="totalStudents">0</div>
-                            <div class="stat-label">總學生數</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number" id="assignedStudents">0</div>
-                            <div class="stat-label">已分配</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number" id="blockedSeats">0</div>
-                            <div class="stat-label">阻擋座位</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number" id="assignmentRate">0%</div>
-                            <div class="stat-label">分配率</div>
-                        </div>
+                    <h3>檢查結果</h3>
+                    <div id="constraintReport" style="font-size:12px;color:#64748b;">
+                        尚未分配。排好座位後，這裡會顯示「不可同坐」是否遵守，以及前排／SEN 是否坐在前兩排。
                     </div>
                 </div>
-
-                <div id="alertContainer"></div>
             </div>
         </div>
     </div>
@@ -827,6 +837,7 @@
         const MAX_ROWS = 12;
         const MAX_COLS = 12;
         const TEMPLATE_KEY = 'ultraSeat_templates_v1';
+        const CLASS_SNAP_KEY = 'ultraSeat_classSnap_v1';
         const LAST_PLAN_KEY = 'ultraSeat_lastPlan_v1';
         const SOLVER_NODE_LIMIT = 250000;
         const SOLVER_TIME_MS = 8000;
@@ -845,6 +856,7 @@
         let selectedSeat = null;
         let currentMode = 'assign';
         let constraints = [];
+        let pdfExported = false;
         /** @type {Record<string, [number, number]>|null} */
         let lastPlanMemory = null;
 
@@ -880,16 +892,55 @@
 
         function setMode(mode) {
             currentMode = mode;
-            document.querySelectorAll('.mode-selector .mode-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(mode + 'Mode').classList.add('active');
-            document.getElementById('modeHelp').textContent =
-                mode === 'assign' ? '點擊座位進行分配或交換' : '點擊座位設定／取消阻擋（壞桌、通道等）';
             selectedSeat = null;
+            const toggle = document.getElementById('blockToggle');
+            const help = document.getElementById('modeHelp');
+            if (toggle) {
+                toggle.textContent = mode === 'block' ? '擋壞桌：開' : '擋壞桌：關';
+                toggle.classList.toggle('is-on', mode === 'block');
+            }
+            if (help) {
+                help.textContent = mode === 'block'
+                    ? '現在是擋壞桌：點空格可擋住或取消。'
+                    : '點一個座位，再點另一格即可對調。';
+            }
+            updateSeatHint();
             renderClassroom();
+        }
+
+        function toggleBlockMode() {
+            setMode(currentMode === 'block' ? 'assign' : 'block');
+        }
+
+        function updateSeatHint() {
+            const el = document.getElementById('seatHint');
+            if (!el) return;
+            if (currentMode === 'block') {
+                el.textContent = '點空格可擋住壞桌，再點一次取消。';
+                return;
+            }
+            if (selectedSeat && classroom.seats[selectedSeat[0]]) {
+                const student = classroom.seats[selectedSeat[0]][selectedSeat[1]];
+                const who = student ? student.name : '這個空位';
+                el.textContent = `已選${who}，再點另一格即可對調。`;
+                return;
+            }
+            el.textContent = students.length ? '點一個座位，再點另一格即可對調。' : '先在左邊匯入名單。';
+        }
+
+        function updateSteps() {
+            const imported = document.getElementById('stepImport');
+            const adjusted = document.getElementById('stepAdjust');
+            const exported = document.getElementById('stepExport');
+            const assigned = students.filter(s => s.hasAssignedSeat()).length;
+            if (imported) imported.classList.toggle('done', students.length > 0);
+            if (adjusted) adjusted.classList.toggle('done', assigned > 0);
+            if (exported) exported.classList.toggle('done', pdfExported);
         }
 
         function showAlert(message, type = 'info') {
             const alertContainer = document.getElementById('alertContainer');
+            if (!alertContainer) return;
             const alert = document.createElement('div');
             alert.className = `alert alert-${type}`;
             alert.textContent = message;
@@ -897,7 +948,8 @@
             setTimeout(() => alert.remove(), 4500);
         }
 
-        function createClassroom() {
+        function createClassroom(opts) {
+            const silent = !!(opts && opts.silent);
             const rows = parseInt(document.getElementById('rows').value, 10);
             const cols = parseInt(document.getElementById('cols').value, 10);
             const className = document.getElementById('className').value.trim() || '未命名';
@@ -924,10 +976,11 @@
 
             students.forEach(s => s.clearSeat());
             selectedSeat = null;
+            pdfExported = false;
             renderClassroom();
             updateStatistics();
             updateStudentsList();
-            showAlert(`課室已套用：${rows}×${cols}`, 'success');
+            if (!silent) showAlert(`課室已套用：${rows}×${cols}`, 'success');
         }
 
         function readTeachersFromInputs() {
@@ -954,6 +1007,7 @@
                 if (!el) return;
                 el.addEventListener('input', function () {
                     syncFormMetaFromInputs();
+                    if (id === 'className') refreshSnapHint();
                     if (classroom.seats.length) renderClassroom();
                 });
             });
@@ -980,7 +1034,7 @@
             const list = Array.isArray(teachers) ? teachers : ['', '', ''];
             const lines = [0, 1, 2].map(function (i) {
                 const name = escape(String(list[i] || '').trim());
-                return `<div>Class Teacher ${i + 1}${name ? '：' + name : ''}</div>`;
+                return `<div>班主任${name ? '：' + name : ''}</div>`;
             });
             return `<div class="school-form-teachers">${lines.join('')}</div>`;
         }
@@ -1043,11 +1097,12 @@
             const host = document.getElementById('schoolFormHost');
             if (!host) return;
             if (!classroom.seats.length) {
-                host.innerHTML = '<div style="color:#999;padding:40px;text-align:center;">請先建立教室布局</div>';
+                host.innerHTML = '<div style="color:#999;padding:40px;text-align:center;">先在左邊匯入名單</div>';
+                updateSeatHint();
                 return;
             }
             syncFormMetaFromInputs();
-            host.innerHTML = buildSchoolFormHtml({
+            let html = buildSchoolFormHtml({
                 className: classroom.className,
                 room: classroom.room,
                 rows: classroom.rows,
@@ -1058,6 +1113,11 @@
                 selectedSeat,
                 interactive: true
             });
+            if (!students.length) {
+                html += '<p class="school-form-hint no-print">先在左邊匯入名單。</p>';
+            }
+            host.innerHTML = html;
+            updateSeatHint();
         }
 
         function escapeHtml(str) {
@@ -1138,7 +1198,7 @@
             const select = document.getElementById('templateSelect');
             const list = loadTemplateList();
             const current = select.value;
-            select.innerHTML = '<option value="">選擇已存模板</option>';
+            select.innerHTML = '<option value="">選擇已存形狀</option>';
             list.forEach((t, i) => {
                 const opt = document.createElement('option');
                 opt.value = String(i);
@@ -1168,19 +1228,19 @@
             saveTemplateList(list);
             document.getElementById('templateName').value = name;
             refreshTemplateSelect();
-            showAlert(`模板「${name}」已儲存於本機`, 'success');
+            showAlert(`課室形狀「${name}」已儲存於本機`, 'success');
         }
 
         function loadSelectedTemplate() {
             const idx = document.getElementById('templateSelect').value;
             if (idx === '') {
-                showAlert('請先選擇模板', 'error');
+                showAlert('請先選擇課室形狀', 'error');
                 return;
             }
             const list = loadTemplateList();
             const t = list[Number(idx)];
             if (!t) {
-                showAlert('找不到模板', 'error');
+                showAlert('找不到課室形狀', 'error');
                 return;
             }
             document.getElementById('rows').value = t.rows;
@@ -1196,19 +1256,19 @@
             if (t1) t1.value = teachers[0] || '';
             if (t2) t2.value = teachers[1] || '';
             if (t3) t3.value = teachers[2] || '';
-            createClassroom();
+            createClassroom({ silent: true });
             classroom.blockedSeats = new Set(t.blockedSeats || []);
             classroom.room = t.room || '';
             classroom.teachers = [teachers[0] || '', teachers[1] || '', teachers[2] || ''];
             renderClassroom();
             updateStatistics();
-            showAlert(`已載入模板「${t.name}」`, 'success');
+            showAlert(`已載入課室形狀「${t.name}」`, 'success');
         }
 
         function deleteSelectedTemplate() {
             const idx = document.getElementById('templateSelect').value;
             if (idx === '') {
-                showAlert('請先選擇模板', 'error');
+                showAlert('請先選擇課室形狀', 'error');
                 return;
             }
             const list = loadTemplateList();
@@ -1217,7 +1277,100 @@
             list.splice(Number(idx), 1);
             saveTemplateList(list);
             refreshTemplateSelect();
-            showAlert(`已刪除模板「${t.name}」`, 'info');
+            showAlert(`已刪除課室形狀「${t.name}」`, 'info');
+        }
+
+        function loadClassSnaps() {
+            try {
+                return JSON.parse(localStorage.getItem(CLASS_SNAP_KEY) || '{}');
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function refreshSnapHint() {
+            const el = document.getElementById('classSnapHint');
+            if (!el) return;
+            const name = (document.getElementById('className').value || '').trim() || classroom.className || '未命名';
+            const snap = loadClassSnaps()[name];
+            if (snap && snap.savedAt) {
+                const when = String(snap.savedAt).slice(0, 16).replace('T', ' ');
+                const n = (snap.students || []).length;
+                el.textContent = `這部電腦已記住「${name}」（${n} 人，${when}）。可按「載入上次」。`;
+            } else {
+                el.textContent = '名單和座位只留在這部電腦，不上傳。';
+            }
+        }
+
+        function saveThisClass() {
+            syncFormMetaFromInputs();
+            const all = loadClassSnaps();
+            const key = classroom.className || '未命名';
+            all[key] = {
+                className: classroom.className,
+                room: classroom.room,
+                schoolName: classroom.schoolName,
+                teachers: classroom.teachers.slice(),
+                rows: classroom.rows,
+                cols: classroom.cols,
+                blocked: Array.from(classroom.blockedSeats),
+                students: students.map(s => ({
+                    id: s.id,
+                    name: s.name,
+                    position: s.position,
+                    classGroup: s.classGroup,
+                    needsFront: s.needsFront,
+                    row: s.row,
+                    col: s.col
+                })),
+                constraints: constraints.slice(),
+                savedAt: new Date().toISOString()
+            };
+            localStorage.setItem(CLASS_SNAP_KEY, JSON.stringify(all));
+            refreshSnapHint();
+            showAlert(`已記住「${key}」在這部電腦`, 'success');
+        }
+
+        function loadThisClass() {
+            const name = (document.getElementById('className').value || '').trim() || classroom.className || '未命名';
+            const t = loadClassSnaps()[name];
+            if (!t) {
+                showAlert('這部電腦還沒有記住這一班', 'error');
+                return;
+            }
+            document.getElementById('rows').value = t.rows;
+            document.getElementById('cols').value = t.cols;
+            if (t.className) document.getElementById('className').value = t.className;
+            if (document.getElementById('roomName')) document.getElementById('roomName').value = t.room || '';
+            const teachers = t.teachers || ['', '', ''];
+            ['classTeacher1', 'classTeacher2', 'classTeacher3'].forEach((id, i) => {
+                const el = document.getElementById(id);
+                if (el) el.value = teachers[i] || '';
+            });
+            if (t.schoolName && document.getElementById('schoolName')) {
+                document.getElementById('schoolName').value = t.schoolName;
+            }
+            createClassroom({ silent: true });
+            classroom.blockedSeats = new Set(t.blocked || []);
+            students = (t.students || []).map(s => {
+                const st = new Student(s.id, s.name, s.position || '', s.classGroup || '', !!s.needsFront);
+                if (s.row != null && s.col != null && s.row < classroom.rows && s.col < classroom.cols
+                    && !classroom.blockedSeats.has(s.row + '-' + s.col)) {
+                    classroom.seats[s.row][s.col] = st;
+                    st.assignSeat(s.row, s.col);
+                }
+                return st;
+            });
+            constraints = Array.isArray(t.constraints) ? t.constraints : [];
+            selectedSeat = null;
+            pdfExported = false;
+            updateConstraintsDisplay();
+            updateStudentsList();
+            updateStatistics();
+            renderClassroom();
+            saveLastPlan(captureCurrentPlan());
+            refreshSnapHint();
+            showAlert(`已載回「${name}」`, 'success');
         }
 
         /* ---------- Sample / CSV ---------- */
@@ -1271,6 +1424,7 @@
             updateStudentsList();
             updateStatistics();
             clearConstraintReport();
+            pdfExported = false;
             showAlert('已建立 36 人班內範例，並加入 3 組不可同坐；正在放到座位…', 'success');
             placeStudentsOnSeats();
         }
@@ -1427,7 +1581,7 @@
             document.getElementById('rows').value = placement.rows;
             document.getElementById('cols').value = placement.cols;
             if (placement.className) document.getElementById('className').value = placement.className;
-            createClassroom();
+            createClassroom({ silent: true });
             classroom.blockedSeats = new Set(placement.blocked || []);
             students = (placement.students || []).map(function (s) {
                 const student = new Student(s.id, s.name, s.position, s.classGroup, s.needsFront);
@@ -1525,6 +1679,7 @@
 
             if (newStudents.length > 0) {
                 students = newStudents;
+                pdfExported = false;
                 constraints = [];
                 clearStoredPlanForClass(classroom.className);
                 updateConstraintsDisplay();
@@ -1576,10 +1731,19 @@
             classroom.seats = Array.from({ length: classroom.rows }, () => Array(classroom.cols).fill(null));
             students.forEach(s => s.clearSeat());
             selectedSeat = null;
+            pdfExported = false;
             renderClassroom();
             updateStudentsList();
             updateStatistics();
             if (!silent) showAlert('座位已重置', 'info');
+        }
+
+        function confirmResetSeats() {
+            if (window.confirm('確定要清空座位上的姓名嗎？名單仍會留下。')) resetSeats();
+        }
+
+        function confirmClearBlocked() {
+            if (window.confirm('確定要清除所有壞桌嗎？')) clearBlocked();
         }
 
         function clearBlocked() {
@@ -1592,12 +1756,12 @@
         function placeStudentsOnSeats() {
             if (!classroom.seats.length) createClassroom();
             if (students.length === 0) {
-                showAlert('請先匯入 CSV 或按「建立班內範例」', 'error');
+                showAlert('請先在左邊匯入名單', 'error');
                 return;
             }
             const availableSeats = getAvailableSeats();
             if (students.length > availableSeats.length) {
-                showAlert(`已有 ${students.length} 人，但只有 ${availableSeats.length} 個座位。請先加大行列或減少阻擋，再按「把名單放到座位」。`, 'warning');
+                showAlert(`已有 ${students.length} 人，但只有 ${availableSeats.length} 個座位。請先在「更多」加大行列或減少阻擋，再按「再排一次座位」。`, 'warning');
                 renderClassroom();
                 return;
             }
@@ -2144,6 +2308,7 @@
             document.getElementById('assignedStudents').textContent = assigned;
             document.getElementById('blockedSeats').textContent = blocked;
             document.getElementById('assignmentRate').textContent = rate + '%';
+            updateSteps();
         }
 
         /** 分析用 CSV：含所有格（含空位／阻擋）方便對應課室；並附左鄰／右鄰。 */
@@ -2247,8 +2412,8 @@
         }
 
         function ensurePdfLibraries() {
-            const html2canvasSrc = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-            const jspdfSrc = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js';
+            const html2canvasSrc = 'vendor/html2canvas.min.js';
+            const jspdfSrc = 'vendor/jspdf.umd.min.js';
             return loadScriptOnce(html2canvasSrc).then(function () {
                 return loadScriptOnce(jspdfSrc);
             });
@@ -2286,6 +2451,8 @@
                     pdf.addImage(img, 'JPEG', 0, 0, 297, 210);
                     const cls = (classroom.className || '座位表').replace(/[\\/:*?"<>|]/g, '');
                     pdf.save(`${cls}班科座位表.pdf`);
+                    pdfExported = true;
+                    updateSteps();
                     showAlert('已下載 A4 橫向 PDF（黑板在最下方）', 'success');
                 });
             }).catch(function (err) {
@@ -2320,10 +2487,11 @@
             document.getElementById('chartDate').value = today.toISOString().slice(0, 10);
             refreshTemplateSelect();
             bindLiveFormFields();
-            createClassroom();
-            updateStatistics();
+            createClassroom({ silent: true });
             updateConstraintsDisplay();
-            showAlert('歡迎使用：匯入名單（會自動排到座位）→ 可再按「把名單放到座位」重排 → 匯出橫向 PDF', 'success');
+            refreshSnapHint();
+            updateSeatHint();
+            updateSteps();
         });
     </script>
 </body>
