@@ -272,7 +272,7 @@ function formatTeacherBlock(teachers, escape) {
     const list = Array.isArray(teachers) ? teachers : ['', '', ''];
     const lines = [0, 1, 2].map(function (i) {
         const name = escape(String(list[i] || '').trim());
-        return `<div>Class Teacher ${i + 1}${name ? '：' + name : ''}</div>`;
+        return `<div>班主任${name ? '：' + name : ''}</div>`;
     });
     return `<div class="school-form-teachers">${lines.join('')}</div>`;
 }
@@ -495,9 +495,9 @@ passed++;
     assert(html.includes('班/科座位表'), 'title phrase');
     assert(html.includes('教師桌'), 'teacher desk');
     assert(html.includes('school-form-blackboard'), 'blackboard at bottom');
-    assert(html.includes('Class Teacher 1：王詠珊'), 'teacher 1 left of desk');
-    assert(html.includes('Class Teacher 2：鄭百喬'), 'teacher 2 left of desk');
-    assert(html.includes('Class Teacher 3'), 'teacher 3 slot');
+    assert(html.includes('班主任：王詠珊'), 'teacher 1 left of desk');
+    assert(html.includes('班主任：鄭百喬'), 'teacher 2 left of desk');
+    assert((html.match(/班主任/g) || []).length === 3, 'three teacher lines');
     assert(html.includes('陳志明'), 'student name visible');
     assert(html.includes('>01<'), 'id visible');
     assert(html.includes('>班長<'), 'position visible');
@@ -510,7 +510,7 @@ passed++;
     assert((html.match(/data-row=/g) || []).length === 36, 'every cell is drawn');
     const titleIdx = html.indexOf('1B班/科座位表');
     const nameIdx = html.indexOf('陳志明');
-    const teacherIdx = html.indexOf('Class Teacher 1：王詠珊');
+    const teacherIdx = html.indexOf('班主任：王詠珊');
     const deskIdx = html.indexOf('教師桌');
     const boardIdx = html.indexOf('school-form-blackboard');
     assert(titleIdx < nameIdx && nameIdx < teacherIdx && teacherIdx < deskIdx && deskIdx < boardIdx,
@@ -525,7 +525,7 @@ passed++;
     assert(exportHtml.includes('擋'), 'export shows blocked cell');
     assert(exportHtml.includes('school-form-export'), 'export class');
     assert(exportHtml.includes('>01<') && exportHtml.includes('>班長<'), 'export keeps id and position');
-    assert(exportHtml.includes('Class Teacher 1：王詠珊'), 'export keeps teacher names');
+    assert(exportHtml.includes('班主任：王詠珊'), 'export keeps teacher names');
     passed++;
 }
 

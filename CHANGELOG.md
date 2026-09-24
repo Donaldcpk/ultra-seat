@@ -4,6 +4,20 @@
 
 ## [Unreleased]
 
+## [2.8.0] - 2026-09-24
+
+### Added
+- 頁首三步：匯入名單、調座位、匯出貼課室；做完會標示完成
+- 「記住這一班」把名單與座位存在這部電腦，重新打開可載回
+- 橫向 PDF 程式放進專案，學校網路擋外網仍可下載
+
+### Changed
+- 主畫面只留匯入、調位、匯出；隨機分配、範例、統計、梅花座、校名、日期收進「更多」
+- 表上與側欄改為「班主任：姓名」
+- 「課室模板」改稱「課室形狀」（只記行列、室、壞桌）
+- 擋壞桌改成看得到的開關；點了座位會寫再點一格對調；訊息改到頁面上方
+- 重置座位、清除阻擋會先詢問
+
 ## [2.7.0] - 2026-09-24
 
 ### Fixed
@@ -88,7 +102,8 @@
 ### Added
 - 初版 CSV、隨機分配、Python GUI
 
-[Unreleased]: https://github.com/Donaldcpk/ultra-seat/compare/v2.7.0...HEAD
+[Unreleased]: https://github.com/Donaldcpk/ultra-seat/compare/v2.8.0...HEAD
+[2.8.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.7.0...v2.8.0
 [2.7.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/Donaldcpk/ultra-seat/compare/v2.4.0...v2.5.0
